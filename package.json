@@ -1,38 +1,32 @@
 {
-  "name": "vector-wave-kolegium",
+  "name": "ai-kolegium-redakcyjne",
   "version": "1.0.0",
-  "description": "Vector Wave AI Kolegium - CrewAI based editorial system with React UI",
+  "description": "AI Editorial Board with CrewAI and AG-UI Protocol",
+  "main": "src/main.py",
   "scripts": {
-    "dev": "concurrently \"npm run backend:api\" \"npm run frontend:dev\"",
-    "dev:full": "concurrently \"npm run backend:dev\" \"npm run backend:api\" \"npm run frontend:dev\"",
-    "backend:dev": "source ./venv/bin/activate && cd ai_kolegium_redakcyjne && crewai run",
-    "backend:api": "./scripts/run-backend-api.sh",
-    "backend:install": "source ./venv/bin/activate && pip install -r requirements.txt",
-    "backend:setup": "./scripts/setup-backend.sh",
-    "frontend:dev": "cd vector-wave-ui && npm run dev",
-    "frontend:install": "cd vector-wave-ui && npm install",
-    "frontend:build": "cd vector-wave-ui && npm run build",
-    "crew:run": "source ./venv/bin/activate && cd ai_kolegium_redakcyjne && crewai run",
-    "crew:train": "source ./venv/bin/activate && cd ai_kolegium_redakcyjne && crewai train 5",
-    "crew:test": "source ./venv/bin/activate && cd ai_kolegium_redakcyjne && crewai test 3",
-    "flow:run": "source ./venv/bin/activate && cd ai_publishing_cycle && python src/ai_publishing_cycle/main.py",
-    "flow:plot": "source ./venv/bin/activate && cd ai_publishing_cycle && python -c \"from src.ai_publishing_cycle.main import plot; plot()\"",
-    "install": "npm run backend:install && npm run frontend:install",
-    "setup": "npm run backend:setup && npm run frontend:install",
-    "start": "npm run dev",
-    "test": "npm run crew:test"
+    "dev": "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000",
+    "start": "uvicorn src.api.main:app --host 0.0.0.0 --port 8000",
+    "test": "pytest src/tests/ -v",
+    "test:coverage": "pytest src/tests/ --cov=src --cov-report=html",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:install": "cd frontend && npm install",
+    "migrate": "alembic upgrade head",
+    "migrate:create": "alembic revision --autogenerate -m",
+    "agents:test": "python -m src.crew.test_crew",
+    "monitoring:start": "docker-compose -f docker-compose.monitoring.yml up -d"
   },
   "keywords": [
     "ai",
     "editorial",
     "crewai",
-    "react",
-    "vector-wave",
+    "ag-ui",
+    "journalism",
     "automation"
   ],
-  "author": "Vector Wave Team",
-  "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
+  "author": "AI Kolegium Team",
+  "license": "MIT"
 }
