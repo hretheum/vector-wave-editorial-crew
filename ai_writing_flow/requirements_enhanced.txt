@@ -1,0 +1,20 @@
+# Enhanced Knowledge Base Integration Requirements
+# Additional dependencies for the Knowledge Adapter pattern
+
+# HTTP client for async operations
+aiohttp>=3.8.0
+
+# Structured logging
+structlog>=22.0.0
+
+# Testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# Existing CrewAI dependencies (ensure compatibility)
+crewai>=0.51.0
+crewai-tools>=0.4.0
+
+# Development and testing
+coverage>=7.0.0
+pytest-cov>=4.0.0

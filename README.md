@@ -1,10 +1,23 @@
 # AI Kolegium Redakcyjne
 
+## 🚨 **CRITICAL: Latest Working Version**
+- **Commit**: `4b19b48` (2025-08-06)
+- **Status**: ✅ Phase 5 AI Assistant COMPLETED | TRUE Agentic RAG Implementation WORKING
+- **Current Phase**: Production Ready - All 12 steps of Phase 5 completed
+- **Last Achievement**: Complete AI Assistant integration with conversation memory & comprehensive error handling
+- **Key Features**: 
+  - TRUE Agentic RAG (agent autonomously queries style guide)
+  - AI Assistant for draft editing with natural language
+  - Conversation memory (20 messages per session)
+  - Streaming responses with SSE
+  - Comprehensive error handling & health monitoring
+- **Documentation**: See [FEATURE_CUSTOM_IDEAS_ANALYSIS.md](./docs/FEATURE_CUSTOM_IDEAS_ANALYSIS.md)
+
 ## 🚀 **Intelligent Editorial System with AI Agent Collaboration**
 
 Zautomatyzowany system redakcyjny gdzie **5 wyspecjalizowanych agentów AI** współpracuje w czasie rzeczywistym przy odkrywaniu trendów, analizie viralowości i podejmowaniu decyzji redakcyjnych z możliwością ludzkiej interwencji.
 
-**Tech Stack**: CrewAI Flows + AG-UI Protocol + React + PostgreSQL + Digital Ocean
+**Tech Stack**: CrewAI 0.152.0 + Knowledge Base + Docker + PostgreSQL + Digital Ocean
 
 ## 🧭 **Start Tutaj**
 
@@ -24,8 +37,9 @@ Zautomatyzowany system redakcyjny gdzie **5 wyspecjalizowanych agentów AI** wsp
 
 Inteligentny system który **automatyzuje proces redakcyjny** od odkrycia trendu do decyzji o publikacji.
 
-### 🤖 **5 Współpracujących Agentów AI**
+### 🤖 **10+ Współpracujących Agentów AI**
 
+### Kolegium Redakcyjne (5 agentów)
 | Agent | Rola | Główne zadanie |
 |-------|------|----------------|
 | **Content Scout** | 🔍 Odkrywca | Skanuje internet w poszukiwaniu trending topics |
@@ -33,6 +47,15 @@ Inteligentny system który **automatyzuje proces redakcyjny** od odkrycia trendu
 | **Editorial Strategist** | 📝 Strateg | Podejmuje decyzje redakcyjne (z human-in-the-loop) |
 | **Quality Assessor** | ✅ Kontroler | Fact-checking, source verification, quality control |
 | **Decision Coordinator** | 🎯 Koordynator | Orkiestruje całą współpracę i generuje raporty |
+
+### AI Writing Flow (5 agentów) + Knowledge Base
+| Agent | Rola | Główne zadanie | KB Integration |
+|-------|------|----------------|----------------|
+| **Research Agent** | 🔬 Badacz | Deep research, źródła, fact-finding | ✅ Full KB access |
+| **Audience Mapper** | 👥 Strateg | Dopasowanie do grup docelowych | ✅ KB patterns |
+| **Content Writer** | ✍️ Pisarz | Generowanie contentu zgodnego ze styleguide | ✅ Style guides |
+| **Style Validator** | 📏 Strażnik | Walidacja stylu Vector Wave | ✅ Validation rules |
+| **Quality Controller** | 🎯 Kontroler | Finalna ocena jakości i etyki | ✅ Quality metrics |
 
 ### ⚡ **Kluczowe Zalety**
 
@@ -42,6 +65,32 @@ Inteligentny system który **automatyzuje proces redakcyjny** od odkrycia trendu
 - **Real-time collaboration** - redaktorzy widzą co myślą agenty w czasie rzeczywistym
 - **Scalable** - można dodawać nowych agentów przez natural language
 
+### 🆕 **Najnowsze Features (2025-08-06)**
+
+1. **TRUE Agentic RAG System**
+   - **Autonomous Agent**: Agent sam decyduje co i jak szukać w style guide
+   - **OpenAI Function Calling**: Natywna integracja z function calling (nie hacki z regex!)
+   - **Iterative Search**: 3-5 autonomicznych wyszukiwań per generacja
+   - **Zero Hardcoded Rules**: Brak predetermined queries czy fallback rules
+   - **Unique Results**: Ten sam input → różne queries → różny content
+
+2. **Complete Style Guide Integration**
+   - **180 reguł** ładowanych automatycznie z plików styleguides
+   - **ChromaDB Vector Search**: Semantyczne wyszukiwanie reguł
+   - **Real Query Logs**: Każde wyszukiwanie agenta widoczne w logach
+   - **Dynamic Discovery**: Agent odkrywa różne reguły dla różnych tematów
+
+3. **SSE Streaming dla Batch Analysis**
+   - **Real-time progress**: Widać postęp analizy każdego pomysłu
+   - **Progress bar ready**: Procenty 0-100% dla UI
+   - **Event types**: start, progress, result, error, complete
+   - **Cache support**: Wyniki całego batcha są cachowane
+
+4. **AI-Powered Dashboard z Preload**
+   - **Instant response**: Preload przy starcie kontenera
+   - **Auto-refresh**: Co 20 minut odświeża preloaded data
+   - **Smart fallback**: Preload → cache → generate
+
 ## 🤖 CrewAI - Serce Systemu
 
 ### Dlaczego CrewAI?
@@ -50,6 +99,7 @@ Inteligentny system który **automatyzuje proces redakcyjny** od odkrycia trendu
 - **Task Chaining**: Zadania mogą zależeć od wyników innych zadań
 - **Human Input**: Natywne wsparcie dla ludzkiej interwencji
 - **Delegation**: Agenci mogą delegować zadania do innych agentów
+- **Knowledge Base**: Zintegrowana baza wiedzy CrewAI z vector search
 
 ### Przykład CrewAI Agent
 ```python
@@ -308,6 +358,28 @@ const EditorialDashboard = () => {
   );
 };
 ```
+## ✍️ **AI Writing Flow - Generowanie Contentu**
+
+### Architektura Flow
+```
+Topic Selection → Research* → Audience Mapping → Draft Generation 
+                     ↓                                    ↓
+              (*skip for ORIGINAL)              Human Review Loop
+                                                         ↓
+                                              Style Validation → Quality Check → Publication
+```
+
+### Human-in-the-Loop Decision Points
+- **Minor edits** → Style validation → Quality check
+- **Major changes** → Audience re-alignment → New draft
+- **Direction pivot** → New research (or audience for ORIGINAL)
+
+### Integracja z UI
+- Przycisk "Wygeneruj draft" w ChatPanel
+- Real-time polling statusu generowania
+- Interfejs feedbacku z 4 opcjami decyzji
+- Metryki jakości (Quality Score, Style Score)
+
 ## 🗺️ **Implementation Status**
 
 ### ✅ **Phase 1: Foundation** (COMPLETED)
@@ -315,18 +387,25 @@ const EditorialDashboard = () => {
 - Docker + CI/CD pipeline working
 - Basic CrewAI agents functional
 
-### 🔄 **Phase 2: Core Agents** (IN PROGRESS)  
+### ✅ **Phase 2: Core Agents** (COMPLETED)  
 - Content Scout + Trend Analyst implemented
 - AG-UI event system partially integrated
 - PostgreSQL + Redis infrastructure ready
+- **AI Writing Flow fully implemented** (5 agents)
+- **UI integration with generate-draft endpoints**
+- **Human feedback loop operational**
 
-### 📋 **Phase 3-5: Advanced Features** (PLANNED)
-- Human-in-the-loop workflows
-- Quality Assessor + Decision Coordinator
+### 🔄 **Phase 3: Integration** (IN PROGRESS)
+- Connecting Kolegium Flow with Writing Flow
+- WebSocket/SSE for real-time updates
+- End-to-end testing
+
+### 📋 **Phase 4-5: Advanced Features** (PLANNED)
 - Dynamic agent creation
 - Production hardening
+- Performance optimization
 
-**Current Status**: Uruchomiony Content Scout może odkrywać trending topics i Trend Analyst ocenia ich viral potential. System gotowy do dodania kolejnych agentów.
+**Current Status**: System ma pełne Kolegium Redakcyjne (5 agentów) oraz AI Writing Flow (5 agentów). UI jest zintegrowane z endpointami do generowania draftów. Human-in-the-loop feedback działa.
 
 ## 💰 **Resource Requirements**
 

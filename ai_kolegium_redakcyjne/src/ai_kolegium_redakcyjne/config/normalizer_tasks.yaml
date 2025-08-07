@@ -1,0 +1,240 @@
+# Content Normalizer Tasks Configuration
+
+classify_content:
+  description: >
+    STEP 1: Use Local Content Reader tool to scan ALL content in /content/raw folder.
+    
+    STEP 2: For each file, determine:
+    - Content Type: SOURCE (external content) / DRAFT (original writing) / 
+      SUGGESTION (ideas, angles) / TEMPLATE / DATA
+    - Platform: twitter / linkedin / newsletter / medium / general
+    - Purpose: research / publication / ideation / reference
+    - Language: PL / EN / mixed
+    - Status: complete / partial / outline
+    
+    IMPORTANT DISTINCTIONS:
+    - SOURCE: Content copied/scraped from internet, articles, research papers
+    - DRAFT: Original content being written for publication
+    - SUGGESTION: Ideas like "social media angles", "content ideas", outlines
+    - Never confuse a suggestion/idea with actual source material!
+    
+    STEP 3: Create a comprehensive classification report with file paths and types.
+  expected_output: >
+    A JSON report with classification for all files:
+    {
+      "total_files": number,
+      "classifications": [
+        {
+          "file_path": "path/to/file",
+          "folder": "folder-name",
+          "content_type": "SOURCE|DRAFT|SUGGESTION|TEMPLATE|DATA",
+          "platform": "twitter|linkedin|etc",
+          "purpose": "research|publication|ideation",
+          "language": "PL|EN|mixed",
+          "status": "complete|partial|outline",
+          "title": "extracted title",
+          "preview": "first 200 chars"
+        }
+      ],
+      "summary": {
+        "by_type": {"SOURCE": n, "DRAFT": n, ...},
+        "by_platform": {"twitter": n, ...},
+        "by_language": {"PL": n, "EN": n}
+      }
+    }
+  agent: content_classifier
+
+extract_metadata:
+  description: >
+    For each classified content piece, extract detailed metadata:
+    
+    1. KEY INFORMATION:
+       - Title/Topic
+       - Author (if present)
+       - Date created/published
+       - Word count
+       - Read time estimate
+    
+    2. DATA POINTS (CRITICAL - extract ALL):
+       - Numbers with context (245% growth, $19,500 savings, 8 agents)
+       - Statistics and metrics
+       - Dates and timeframes
+       - Company/product names
+       - Technical terms and tools
+    
+    3. CONTENT STRUCTURE:
+       - Main sections/headers
+       - Key arguments/points
+       - Calls to action
+       - Links and references
+    
+    4. CONTEXTUAL INFO:
+       - Target audience indicators
+       - Tone (professional, casual, technical)
+       - Content completeness
+       - Quality indicators
+  expected_output: >
+    Enhanced metadata for each file:
+    {
+      "metadata_entries": [
+        {
+          "file_path": "path/to/file",
+          "title": "clear descriptive title",
+          "summary": "2-3 sentence summary",
+          "key_points": ["point 1", "point 2"],
+          "data_points": [
+            {"value": "245%", "context": "YoY growth"},
+            {"value": "$19,500", "context": "monthly savings"}
+          ],
+          "entities": {
+            "people": [],
+            "companies": [],
+            "technologies": ["CrewAI", "n8n"],
+            "products": []
+          },
+          "metrics": {
+            "word_count": 1500,
+            "read_time_minutes": 6,
+            "data_density": "high|medium|low"
+          },
+          "quality_score": 0.85
+        }
+      ]
+    }
+  agent: metadata_extractor
+  context:
+    - classify_content
+
+normalize_content:
+  description: >
+    Create normalized versions of all content with standardized format.
+    
+    IMPORTANT DISTINCTION - LOCAL FLAVOR FOR ORIGINAL CONTENT:
+    - If content_type is DRAFT (original content), apply CREATIVE NORMALIZATION
+    - If content_type is SOURCE (external content), apply STANDARD NORMALIZATION
+    
+    CREATIVE NORMALIZATION (for DRAFT/ORIGINAL):
+    ```
+    ---
+    # YAML Frontmatter
+    type: DRAFT
+    content_ownership: ORIGINAL
+    platform: twitter|linkedin|newsletter|medium|general
+    title: "Clear descriptive title"
+    date_processed: "2025-08-01"
+    original_file: "path/to/original"
+    language: PL|EN|mixed
+    creative_elements:
+      tone: professional|casual|humorous|inspirational
+      style: tutorial|story|analysis|opinion
+      hooks: ["hook 1", "hook 2"]
+      cta: "call to action"
+    metrics:
+      word_count: 1500
+      originality_score: 0.95
+      engagement_potential: 0.85
+    tags: [ai, automation, productivity]
+    ---
+    
+    # Creative Summary
+    Engaging 2-3 sentence hook that captures the essence.
+    
+    # Key Messages
+    - Core message 1
+    - Core message 2
+    - Core message 3
+    
+    # Content Highlights
+    - Unique insights
+    - Original perspectives
+    - Creative angles
+    
+    # Platform Adaptations
+    ## Twitter Thread
+    - Opening hook
+    - Key points for thread
+    
+    ## LinkedIn Post
+    - Professional angle
+    - Business value
+    
+    # Original Content
+    [Full original content preserved here]
+    ```
+    
+    STANDARD NORMALIZATION (for SOURCE/EXTERNAL):
+    ```
+    ---
+    # YAML Frontmatter
+    type: SOURCE
+    content_ownership: EXTERNAL
+    platform: twitter|linkedin|newsletter|medium|general
+    title: "Clear descriptive title"
+    date_processed: "2025-08-01"
+    original_file: "path/to/original"
+    source_info:
+      original_url: "if available"
+      author: "if known"
+      publication_date: "if known"
+    language: PL|EN|mixed
+    metrics:
+      word_count: 1500
+      data_points: 12
+      source_credibility: 0.85
+    tags: [ai, automation, productivity]
+    ---
+    
+    # Summary
+    2-3 sentence executive summary of the content.
+    
+    # Key Points
+    - Main point 1
+    - Main point 2
+    - Main point 3
+    
+    # Data & Metrics
+    - 245% YoY growth in usage
+    - $19,500 monthly savings
+    - 8 AI agents deployed
+    
+    # Source References
+    - [List any sources mentioned]
+    - [Include citations if present]
+    
+    # Original Content
+    [Full original content preserved here]
+    ```
+    
+    IMPORTANT:
+    - Detect content_ownership from classification phase
+    - Apply appropriate normalization template
+    - For ORIGINAL: Focus on creative potential, hooks, platform adaptations
+    - For EXTERNAL: Focus on data extraction, source tracking, credibility
+    - Save normalized files to /content/normalized/ with naming: 
+      YYYY-MM-DD-platform-title-slug.md
+    - Preserve ALL original content
+    - Ensure consistent formatting
+  expected_output: >
+    Normalization report:
+    {
+      "normalized_count": number,
+      "output_directory": "/content/normalized/",
+      "files_created": [
+        {
+          "original": "path/to/original",
+          "normalized": "path/to/normalized",
+          "type": "SOURCE|DRAFT|etc",
+          "quality_score": 0.85
+        }
+      ],
+      "processing_stats": {
+        "total_words_processed": number,
+        "total_data_points_extracted": number,
+        "average_quality_score": 0.82
+      },
+      "errors": []
+    }
+  agent: content_normalizer
+  context:
+    - classify_content
+    - extract_metadata

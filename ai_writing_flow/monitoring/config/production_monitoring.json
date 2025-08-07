@@ -1,0 +1,92 @@
+{
+    "monitoring": {
+        "environment": "local_production",
+        "version": "v2.0.0",
+        "enabled": true,
+        "update_interval_seconds": 5,
+        "retention_days": 30
+    },
+    "metrics": {
+        "collection_enabled": true,
+        "history_size": 1000,
+        "cache_duration_seconds": 1.0,
+        "cleanup_interval_seconds": 3600,
+        "thresholds": {
+            "memory_mb": 500.0,
+            "cpu_percent": 80.0,
+            "error_rate_percent": 10.0,
+            "execution_time_seconds": 300.0
+        }
+    },
+    "alerting": {
+        "enabled": true,
+        "channels": ["console", "file", "webhook"],
+        "severity_levels": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+        "cooldown_minutes": 5,
+        "escalation_threshold": 3,
+        "rules": [
+            {
+                "id": "high_cpu_usage",
+                "name": "High CPU Usage Alert",
+                "kpi_type": "cpu_usage",
+                "threshold": 80.0,
+                "comparison": "greater_than",
+                "severity": "HIGH",
+                "description": "CPU usage exceeded 80%",
+                "cooldown_minutes": 5
+            },
+            {
+                "id": "high_memory_usage",
+                "name": "High Memory Usage Alert", 
+                "kpi_type": "memory_usage",
+                "threshold": 400.0,
+                "comparison": "greater_than",
+                "severity": "MEDIUM",
+                "description": "Memory usage exceeded 400MB",
+                "cooldown_minutes": 10
+            },
+            {
+                "id": "high_error_rate",
+                "name": "High Error Rate Alert",
+                "kpi_type": "error_rate", 
+                "threshold": 10.0,
+                "comparison": "greater_than",
+                "severity": "CRITICAL",
+                "description": "Error rate exceeded 10%",
+                "cooldown_minutes": 2
+            }
+        ]
+    },
+    "quality_gates": {
+        "enabled": true,
+        "strict_mode": false,
+        "rules": [
+            "check_system_resources",
+            "check_execution_health",
+            "check_error_patterns",
+            "check_performance_metrics",
+            "check_data_integrity"
+        ]
+    },
+    "storage": {
+        "enabled": true,
+        "path": "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/metrics_data",
+        "format": "sqlite",
+        "backup_enabled": true,
+        "compression_enabled": true,
+        "aggregation_intervals": ["1m", "5m", "1h", "1d"]
+    },
+    "dashboard": {
+        "enabled": true,
+        "port": 8080,
+        "refresh_interval_seconds": 10,
+        "charts": [
+            "cpu_usage_timeline",
+            "memory_usage_timeline", 
+            "execution_time_distribution",
+            "success_rate_gauge",
+            "error_rate_timeline",
+            "throughput_timeline"
+        ]
+    }
+}

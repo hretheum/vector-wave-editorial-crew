@@ -1,0 +1,57 @@
+{
+  "flow_id": "approval_flow_1754335318",
+  "stage": "pre_review_routing_override",
+  "timestamp": "20250804_212158",
+  "state": {
+    "id": "4e1e2bc7-738a-4628-9967-9c4c552da162",
+    "flow_id": "approval_flow_1754335318",
+    "parent_flow_id": null,
+    "current_review_point": "routing_override",
+    "pending_review": true,
+    "review_request_id": null,
+    "content_type": "",
+    "content_preview": "{\n  \"routing_decision\": \"deep_research\",\n  \"confidence\": 0.75,\n  \"reasoning\": \"Technical content requires deep research\"\n}",
+    "full_content": {
+      "routing_decision": "deep_research",
+      "confidence": 0.75,
+      "reasoning": "Technical content requires deep research"
+    },
+    "review_decisions": [
+      {
+        "review_point": "draft_completion",
+        "decision": "approve",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.0002551078796386719,
+        "timestamp": 1754335318.857197
+      },
+      {
+        "review_point": "quality_gate",
+        "decision": "revise",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.00018596649169921875,
+        "timestamp": 1754335318.857423
+      },
+      {
+        "review_point": "topic_viability",
+        "decision": "skip",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.0001800060272216797,
+        "timestamp": 1754335318.8576362
+      }
+    ],
+    "latest_decision": "skip",
+    "human_feedback": "Auto-approved (test mode)",
+    "review_start_time": 1754335318.857661,
+    "total_review_time": 0.0006210803985595703,
+    "review_count": 3,
+    "timeout_count": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "context": {
+      "auto_routing": "deep_research",
+      "confidence": 0.75,
+      "reasoning": "Technical content requires deep research"
+    }
+  }
+}

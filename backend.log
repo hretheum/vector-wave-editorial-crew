@@ -1,0 +1,12 @@
+
+> vector-wave-kolegium@1.0.0 backend:api
+> ./scripts/run-backend-api.sh
+
+🚀 Starting FastAPI backend on http://localhost:8001
+INFO:     Started server process [36540]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('0.0.0.0', 8001): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+🚀 Starting Vector Wave CrewAI Backend on http://localhost:8001

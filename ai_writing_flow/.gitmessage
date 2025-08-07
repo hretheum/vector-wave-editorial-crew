@@ -1,0 +1,27 @@
+# AI Writing Flow - Commit Message Template
+#
+# Type: feat|fix|docs|style|refactor|test|chore
+# Scope: agents|flow|kb|tools|monitoring|optimization|config|ui
+#
+# Format: <type>(<scope>): <subject>
+#
+# Example: feat(agents): add research capabilities to ContentAgent
+#
+# Subject line: 50 chars max, imperative mood
+# Body: 72 chars per line, explain what and why
+
+
+# Type guidelines:
+# - feat: new feature for the user
+# - fix: bug fix for the user
+# - docs: documentation only changes
+# - style: formatting, missing semi colons, etc
+# - refactor: refactoring production code
+# - test: adding tests, refactoring tests
+# - chore: updating grunt tasks, dependencies, etc
+
+# Remember:
+# - Use imperative mood ("add" not "added")
+# - Don't end subject with period
+# - Separate subject from body with blank line
+# - Use body to explain what and why vs. how

@@ -1,0 +1,57 @@
+{
+  "flow_id": "research_flow_1754333690",
+  "stage": "content_analysis",
+  "timestamp": "20250804_205450",
+  "state": {
+    "id": "8ceca8be-b550-400b-97dc-f7656f9c1635",
+    "flow_id": "research_flow_1754333690",
+    "topic_title": "Interrupted Flow Test",
+    "platform": "Twitter",
+    "content_type": "general",
+    "key_themes": [],
+    "editorial_recommendations": "",
+    "current_stage": "content_analysis",
+    "skip_research": false,
+    "research_required": true,
+    "content_analysis": {
+      "content_type": "STANDARD",
+      "viral_score": 0.5,
+      "complexity_level": "intermediate",
+      "recommended_flow_path": "standard_flow",
+      "kb_insights": [
+        "Mock analysis based on keywords"
+      ],
+      "processing_time": 0.1,
+      "target_platform": "Twitter",
+      "analysis_confidence": 0.8,
+      "key_themes": [
+        "general"
+      ],
+      "audience_indicators": {
+        "technical_level": "medium",
+        "target_roles": [
+          "General audience"
+        ]
+      },
+      "content_structure": {
+        "intro": "Overview",
+        "body": "Main content",
+        "conclusion": "Summary"
+      },
+      "kb_available": false,
+      "search_strategy_used": "KEYWORD_ANALYSIS",
+      "kb_query_count": 0
+    },
+    "research_result": null,
+    "kb_insights": [],
+    "start_time": 1754333690.5967581,
+    "analysis_time": 0.002391815185546875,
+    "research_time": 0.0,
+    "total_sources": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "content_type": "STANDARD",
+    "viral_score": 0.5
+  }
+}

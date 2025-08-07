@@ -1,0 +1,133 @@
+{
+  "counters": {
+    "total_flows": 3,
+    "successful_flows": 2,
+    "failed_flows": 1,
+    "total_kb_queries": 10,
+    "total_cache_hits": 8,
+    "total_cache_misses": 2,
+    "total_errors": 2
+  },
+  "completed_flows": [
+    {
+      "flow_id": "test_flow_1",
+      "flow_type": "test_flow",
+      "start_time": 1754338387.3815129,
+      "end_time": 1754338387.591451,
+      "status": "completed",
+      "stages_completed": [
+        "initialization",
+        "processing",
+        "completion"
+      ],
+      "kb_queries": 0,
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "errors": [],
+      "metadata": {
+        "user": "test",
+        "platform": "blog"
+      }
+    },
+    {
+      "flow_id": "test_flow_2",
+      "flow_type": "kb_test_flow",
+      "start_time": 1754338387.5932622,
+      "end_time": 1754338387.593456,
+      "status": "completed",
+      "stages_completed": [],
+      "kb_queries": 10,
+      "cache_hits": 8,
+      "cache_misses": 2,
+      "errors": [],
+      "metadata": {}
+    },
+    {
+      "flow_id": "test_flow_3",
+      "flow_type": "error_test_flow",
+      "start_time": 1754338387.5946062,
+      "end_time": 1754338387.594839,
+      "status": "failed",
+      "stages_completed": [
+        "initialization"
+      ],
+      "kb_queries": 0,
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "errors": [
+        "Connection timeout",
+        "Invalid input"
+      ],
+      "metadata": {}
+    }
+  ],
+  "summary": {
+    "timestamp": "2025-08-04T22:13:07.753974",
+    "session_duration": 0.37247514724731445,
+    "flow_metrics": {
+      "total_flows": 3,
+      "active_flows": 0,
+      "completed_flows": 3,
+      "success_rate": 0.6666666666666666,
+      "avg_duration": 0.07012160619099934,
+      "flows_by_type": {
+        "test_flow": 1,
+        "kb_test_flow": 1,
+        "error_test_flow": 1
+      },
+      "recent_errors": [
+        {
+          "flow_id": "test_flow_3",
+          "flow_type": "error_test_flow",
+          "error": "Connection timeout",
+          "timestamp": 1754338387.594839
+        },
+        {
+          "flow_id": "test_flow_3",
+          "flow_type": "error_test_flow",
+          "error": "Invalid input",
+          "timestamp": 1754338387.594839
+        }
+      ]
+    },
+    "kb_metrics": {
+      "total_queries": 10,
+      "cache_hits": 8,
+      "cache_misses": 2,
+      "cache_hit_rate": 0.8,
+      "queries_per_flow": 3.3333333333333335
+    },
+    "performance_metrics": {
+      "content_generation": {
+        "count": 5,
+        "avg_duration": 0.3244954940696316,
+        "min_duration": 0.12932146377534612,
+        "max_duration": 0.4904322418353385,
+        "success_rate": 0.8
+      },
+      "validation": {
+        "count": 5,
+        "avg_duration": 0.3176119884446044,
+        "min_duration": 0.2244197175710932,
+        "max_duration": 0.37777565537804725,
+        "success_rate": 0.8
+      },
+      "kb_query": {
+        "count": 5,
+        "avg_duration": 0.3544552373396427,
+        "min_duration": 0.179035847089982,
+        "max_duration": 0.4384593626817739,
+        "success_rate": 1.0
+      }
+    },
+    "counters": {
+      "total_flows": 3,
+      "successful_flows": 2,
+      "failed_flows": 1,
+      "total_kb_queries": 10,
+      "total_cache_hits": 8,
+      "total_cache_misses": 2,
+      "total_errors": 2
+    }
+  }
+}

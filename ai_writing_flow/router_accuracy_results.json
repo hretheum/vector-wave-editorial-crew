@@ -1,0 +1,332 @@
+{
+  "total": 12,
+  "correct": 12,
+  "incorrect": 0,
+  "accuracy": 1.0,
+  "details": [
+    {
+      "test_case": "Deep Technical Architecture",
+      "topic": "Implementing Microservices with Event Sourcing",
+      "expected": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score_range": [
+          0.8,
+          1.0
+        ]
+      },
+      "actual": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score": 0.85,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0009908676147460938
+      }
+    },
+    {
+      "test_case": "Framework Deep Dive",
+      "topic": "Building Real-Time Systems with Apache Kafka",
+      "expected": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score_range": [
+          0.8,
+          1.0
+        ]
+      },
+      "actual": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score": 0.85,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.006720066070556641
+      }
+    },
+    {
+      "test_case": "Algorithm Implementation",
+      "topic": "Implementing Distributed Consensus Algorithms",
+      "expected": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score_range": [
+          0.9,
+          1.0
+        ]
+      },
+      "actual": {
+        "route": "deep_research",
+        "content_type": "TECHNICAL",
+        "score": 0.92,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0038950443267822266
+      }
+    },
+    {
+      "test_case": "Trending AI Controversy",
+      "topic": "AI Will Replace All Developers by 2025",
+      "expected": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score_range": [
+          0.7,
+          0.9
+        ]
+      },
+      "actual": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score": 0.9,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0035521984100341797
+      }
+    },
+    {
+      "test_case": "Shocking Tech News",
+      "topic": "This One Weird Trick Makes Your Code 10x Faster",
+      "expected": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score_range": [
+          0.8,
+          1.0
+        ]
+      },
+      "actual": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score": 0.9,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0011820793151855469
+      }
+    },
+    {
+      "test_case": "Hot Take on Trends",
+      "topic": "Why Everyone Is Wrong About Cloud Computing",
+      "expected": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score_range": [
+          0.7,
+          0.9
+        ]
+      },
+      "actual": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score": 0.7999999999999999,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0021910667419433594
+      }
+    },
+    {
+      "test_case": "Industry Overview",
+      "topic": "State of DevOps in 2025",
+      "expected": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score_range": [
+          0.5,
+          0.7
+        ]
+      },
+      "actual": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score": 0.5,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0053250789642333984
+      }
+    },
+    {
+      "test_case": "Tutorial Guide",
+      "topic": "Getting Started with Container Orchestration",
+      "expected": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score_range": [
+          0.4,
+          0.6
+        ]
+      },
+      "actual": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score": 0.4,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0032401084899902344
+      }
+    },
+    {
+      "test_case": "Best Practices Article",
+      "topic": "Security Best Practices for Modern Applications",
+      "expected": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score_range": [
+          0.5,
+          0.7
+        ]
+      },
+      "actual": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score": 0.5,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.004024982452392578
+      }
+    },
+    {
+      "test_case": "Mixed Technical-Viral",
+      "topic": "This Algorithm Hack Will Blow Your Mind",
+      "expected": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score_range": [
+          0.6,
+          0.8
+        ]
+      },
+      "actual": {
+        "route": "quick_research",
+        "content_type": "VIRAL",
+        "score": 0.75,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.002811908721923828
+      }
+    },
+    {
+      "test_case": "Low Quality Topic",
+      "topic": "Random Thoughts About Programming",
+      "expected": {
+        "route": "skip_research",
+        "content_type": "STANDARD",
+        "score_range": [
+          0.0,
+          0.3
+        ]
+      },
+      "actual": {
+        "route": "skip_research",
+        "content_type": "STANDARD",
+        "score": 0.2,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0009627342224121094
+      }
+    },
+    {
+      "test_case": "Ambiguous Content",
+      "topic": "Understanding Modern Software Development",
+      "expected": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score_range": [
+          0.4,
+          0.6
+        ]
+      },
+      "actual": {
+        "route": "standard_research",
+        "content_type": "STANDARD",
+        "score": 0.5,
+        "kb_consulted": false
+      },
+      "validation": {
+        "route_correct": true,
+        "type_correct": true,
+        "score_in_range": true,
+        "overall_correct": true
+      },
+      "performance": {
+        "analysis_time": 0.0015113353729248047
+      }
+    }
+  ]
+}

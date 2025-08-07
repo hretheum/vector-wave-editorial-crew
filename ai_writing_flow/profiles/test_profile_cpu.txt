@@ -1,0 +1,38 @@
+         554 function calls (551 primitive calls) in 1.214 seconds
+
+   Ordered by: cumulative time
+   List reduced from 82 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        3    1.210    0.403    1.210    0.403 {built-in method time.sleep}
+        6    0.000    0.000    0.003    0.001 {built-in method builtins.next}
+        6    0.000    0.000    0.003    0.001 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/src/ai_writing_flow/profiling/dev_profiler.py:139(profile_section)
+        3    0.000    0.000    0.003    0.001 /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:145(__exit__)
+        4    0.000    0.000    0.002    0.001 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_native.py:142(meth)
+        4    0.000    0.000    0.002    0.001 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_base.py:192(_proxy_to_logger)
+        4    0.000    0.000    0.002    0.001 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_base.py:122(_process_event)
+        4    0.000    0.000    0.001    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/dev.py:713(__call__)
+       14    0.000    0.000    0.001    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/dev.py:246(__call__)
+        3    0.000    0.000    0.001    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/__init__.py:1009(cpu_percent)
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/processors.py:492(__call__)
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/processors.py:556(stamper_fmt_local)
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_output.py:104(msg)
+      6/3    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/_psosx.py:343(wrapper)
+        4    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        3    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/_psosx.py:461(cpu_times)
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_config.py:410(__getattr__)
+        3    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/_common.py:452(wrapper)
+       70    0.000    0.000    0.000    0.000 {method 'write' of '_io.StringIO' objects}
+        4    0.000    0.000    0.000    0.000 {method 'strftime' of 'datetime.date' objects}
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/_config.py:344(bind)
+        4    0.000    0.000    0.000    0.000 {method 'astimezone' of 'datetime.datetime' objects}
+        8    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/crewai/llm.py:71(write)
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/crewai/llm.py:87(flush)
+        3    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/__init__.py:1635(cpu_count)
+        3    0.000    0.000    0.000    0.000 /opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:136(__enter__)
+       18    0.000    0.000    0.000    0.000 {method 'getvalue' of '_io.StringIO' objects}
+        3    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/psutil/_psosx.py:154(cpu_count_logical)
+        4    0.000    0.000    0.000    0.000 {method 'flush' of '_io.TextIOWrapper' objects}
+        4    0.000    0.000    0.000    0.000 /Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/structlog/processors.py:601(_figure_out_exc_info)
+
+

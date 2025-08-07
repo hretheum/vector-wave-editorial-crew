@@ -1,0 +1,379 @@
+#!/usr/bin/env python
+"""
+AI Writing Flow - Content generation with styleguide compliance and human-in-the-loop
+"""
+
+import os
+import logging
+from typing import Optional
+from datetime import datetime
+from pathlib import Path
+
+from crewai.flow import Flow, listen, start, router
+from pydantic import BaseModel
+from dotenv import load_dotenv
+
+from ai_writing_flow.models import WritingFlowState, HumanFeedbackDecision
+from ai_writing_flow.crews.writing_crew import WritingCrew
+from ai_writing_flow.tools.styleguide_loader import load_styleguide_context
+from ai_writing_flow.utils.ui_bridge import UIBridge
+
+# Load environment variables
+load_dotenv()
+
+# Disable CrewAI memory logs
+os.environ["CREWAI_STORAGE_LOG_ENABLED"] = "false"
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Reduce CrewAI verbosity
+logging.getLogger("crewai").setLevel(logging.WARNING)
+logging.getLogger("crewai.memory").setLevel(logging.ERROR)
+logging.getLogger("crewai.telemetry").setLevel(logging.ERROR)
+logging.getLogger("crewai.flow").setLevel(logging.ERROR)
+logging.getLogger("crewai_flows").setLevel(logging.ERROR)
+
+
+class AIWritingFlow(Flow[WritingFlowState]):
+    """Main flow for AI content writing with human feedback loop"""
+    
+    def __init__(self):
+        super().__init__(verbose=False)  # Disable verbose logging
+        self.crew = WritingCrew()
+        self.ui_bridge = UIBridge()
+        self.styleguide_context = load_styleguide_context()
+        self._execution_count = 0  # Track how many times flow executes
+        
+    @start()
+    def receive_topic(self):
+        """Receive topic selection from Kolegium"""
+        self._execution_count += 1
+        # logger.info(f"🌊 Flow execution #{self._execution_count}")  # Wykomentowane - powodowało flood
+        
+        if self._execution_count > 3:
+            logger.error("❌ Flow executed too many times, preventing infinite loop!")
+            return "finalize_output"
+            
+        logger.info(f"📝 Starting Writing Flow for: {self.state.topic_title}")
+        logger.info(f"📁 Content path: {self.state.file_path}")
+        logger.info(f"🎯 Platform: {self.state.platform}")
+        logger.info(f"📊 Viral Score: {self.state.viral_score}")
+        logger.info(f"🏷️ Content Ownership: {self.state.content_ownership}")
+        logger.info(f"📄 Content Type: {self.state.content_type}")
+        logger.info(f"💡 Editorial Recommendations: {self.state.editorial_recommendations}")
+        logger.info(f"🔬 Skip Research: {self.state.skip_research}")
+        
+        # Check if file_path is a folder or file
+        content_path = Path(self.state.file_path)
+        
+        if content_path.is_dir():
+            logger.info(f"📂 Processing folder with normalized content")
+            # Find markdown files in the folder
+            md_files = list(content_path.glob("*.md"))
+            # Filter out metadata files
+            md_files = [f for f in md_files if f.name != "NORMALIZATION_META.json"]
+            
+            if md_files:
+                # Store source files for later use
+                self.state.source_files = [str(f) for f in md_files]
+                logger.info(f"📄 Found {len(md_files)} normalized files")
+                
+                # For now, use the first file as primary source
+                # Later, research crew can read all files
+                if len(md_files) == 1:
+                    self.state.file_path = str(md_files[0])
+                    logger.info(f"📄 Using single file: {md_files[0].name}")
+                else:
+                    logger.info(f"📚 Multiple files found, will process all in research phase")
+        elif content_path.is_file():
+            logger.info(f"📄 Processing single normalized file")
+            self.state.source_files = [str(content_path)]
+        else:
+            raise ValueError(f"Invalid content path: {content_path}")
+        
+        self.state.current_stage = "topic_received"
+        self.state.agents_executed.append("flow_initialized")
+        
+        # Check if we should skip research
+        if self.state.content_ownership == "ORIGINAL" or self.state.skip_research:
+            logger.info("⏭️ Skipping research phase for ORIGINAL content")
+        
+        # Router will handle the actual routing
+        return self
+    
+    @router(receive_topic)
+    def route_after_topic(self):
+        """Route based on content ownership"""
+        if self.state.content_ownership == "ORIGINAL" or self.state.skip_research:
+            return "align_audience"
+        return "conduct_research"
+    
+    @listen("conduct_research")
+    def conduct_research(self):
+        """Deep content research for EXTERNAL content"""
+        logger.info("🔍 Conducting deep research...")
+        
+        # Prevent re-execution
+        if "research_agent" in self.state.agents_executed:
+            logger.warning("⚠️ Research already completed, skipping...")
+            return "align_audience"
+        
+        self.state.current_stage = "research"
+        self.state.agents_executed.append("research_agent")
+        
+        try:
+            result = self.crew.research_agent().execute(
+                topic=self.state.topic_title,
+                sources_path=self.state.file_path,
+                context=self.styleguide_context,
+                content_ownership=self.state.content_ownership
+            )
+            
+            self.state.research_sources = result.sources
+            self.state.research_summary = result.summary
+            
+            logger.info("✅ Research completed successfully")
+            return "align_audience"
+            
+        except Exception as e:
+            logger.error(f"❌ Research failed: {str(e)}", exc_info=True)
+            # Return to next stage anyway to avoid infinite loop
+            self.state.research_sources = []
+            self.state.research_summary = "Research skipped due to error"
+            return "align_audience"
+    
+    @listen("align_audience")
+    def align_audience(self):
+        """Align content with target audiences"""
+        logger.info("👥 Aligning with target audiences...")
+        
+        # Check if we already completed this stage
+        if self.state.current_stage == "audience_alignment_completed":
+            logger.warning("⚠️ Audience alignment already completed, skipping...")
+            return "generate_draft"
+        
+        self.state.current_stage = "audience_alignment"
+        self.state.agents_executed.append("audience_mapper")
+        
+        try:
+            # Create audience crew instance
+            audience_crew = self.crew.audience_mapper()
+            
+            logger.info("🎯 Executing audience crew...")
+            result = audience_crew.execute(
+                topic=self.state.topic_title,
+                platform=self.state.platform,
+                research_summary=self.state.research_summary,
+                editorial_recommendations=self.state.editorial_recommendations
+            )
+            
+            logger.info(f"✅ Audience crew completed. Result type: {type(result)}")
+            
+            self.state.audience_scores = {
+                "technical_founder": result.technical_founder_score,
+                "senior_engineer": result.senior_engineer_score,
+                "decision_maker": result.decision_maker_score,
+                "skeptical_learner": result.skeptical_learner_score
+            }
+            self.state.target_depth_level = result.recommended_depth
+            
+            # Mark as completed to prevent re-execution
+            self.state.current_stage = "audience_alignment_completed"
+            
+            logger.info(f"📊 Audience scores set: {self.state.audience_scores}")
+            logger.info("➡️ Moving to generate_draft phase...")
+            
+            return "generate_draft"
+            
+        except Exception as e:
+            logger.error(f"❌ Error in align_audience: {str(e)}", exc_info=True)
+            raise
+    
+    @listen("generate_draft")
+    def generate_draft(self):
+        """Generate initial draft"""
+        logger.info("✍️ Generating draft...")
+        
+        # Prevent re-execution
+        if "content_writer" in self.state.agents_executed:
+            logger.warning("⚠️ Content writer already executed, skipping...")
+            return "validate_style"
+            
+        self.state.current_stage = "draft_generation"
+        self.state.agents_executed.append("content_writer")
+        
+        result = self.crew.content_writer().execute(
+            topic=self.state.topic_title,
+            platform=self.state.platform,
+            audience_insights=self.state.audience_insights,
+            research_summary=self.state.research_summary,
+            depth_level=self.state.target_depth_level,
+            styleguide_context=self.styleguide_context
+        )
+        
+        self.state.current_draft = result.draft
+        self.state.draft_versions.append(result.draft)
+        
+        # Send draft to UI for human review
+        logger.info("👤 Sending draft for human review...")
+        self.ui_bridge.send_draft_for_review(
+            draft=result.draft,
+            metadata={
+                "word_count": result.word_count,
+                "structure_type": result.structure_type,
+                "non_obvious_insights": result.non_obvious_insights
+            }
+        )
+        
+        # For MVP, skip human feedback and go directly to style validation
+        logger.info("🚀 MVP Mode: Skipping human feedback, proceeding to style validation")
+        return "validate_style"
+    
+    @listen("await_human_feedback")
+    def await_human_feedback(self):
+        """Wait for human feedback on draft"""
+        logger.info("⏳ Awaiting human feedback...")
+        self.state.current_stage = "human_review"
+        
+        # For MVP, we'll auto-approve after mock feedback
+        # In production, this would wait for actual UI callback
+        logger.info("🤖 Using mock feedback for MVP")
+        feedback = self.ui_bridge.get_human_feedback()
+        
+        if feedback:
+            self.state.human_feedback = feedback.feedback_text
+            self.state.human_feedback_type = feedback.feedback_type
+            
+            return f"process_{feedback.feedback_type}_feedback"
+        
+        # No feedback means approve as-is
+        return "validate_style"
+    
+    @router(await_human_feedback)
+    def route_human_feedback(self):
+        """Route based on human feedback type"""
+        if not self.state.human_feedback_type:
+            return "validate_style"
+        
+        feedback_routes = {
+            "minor": "validate_style",      # Minor edits -> style check
+            "major": "align_audience",       # Content changes -> re-align
+            "pivot": "conduct_research"      # Direction change -> research
+        }
+        
+        # For ORIGINAL content, skip research even on pivot
+        if self.state.human_feedback_type == "pivot" and self.state.content_ownership == "ORIGINAL":
+            return "align_audience"
+        
+        return feedback_routes.get(self.state.human_feedback_type, "validate_style")
+    
+    @listen("validate_style")
+    def validate_style(self):
+        """Validate against style guide"""
+        logger.info("📏 Validating style compliance...")
+        self.state.current_stage = "style_validation"
+        self.state.agents_executed.append("style_validator")
+        
+        result = self.crew.style_validator().execute(
+            draft=self.state.current_draft,
+            styleguide_context=self.styleguide_context
+        )
+        
+        self.state.style_violations = result.violations
+        self.state.forbidden_phrases_found = result.forbidden_phrases
+        self.state.style_score = result.compliance_score
+        
+        if not result.is_compliant:
+            logger.warning(f"❌ Style violations found: {len(result.violations)}")
+            self.state.revision_count += 1
+            
+            if self.state.revision_count > 3:
+                logger.error("🚨 Max revisions reached, escalating to human")
+                self.ui_bridge.escalate_to_human("Max revision attempts")
+                return "finalize_output"
+            
+            return "generate_draft"  # Retry with feedback
+        
+        return "quality_check"
+    
+    @listen("quality_check")
+    def quality_check(self):
+        """Final quality assessment"""
+        logger.info("✅ Running quality check...")
+        self.state.current_stage = "quality_assessment"
+        self.state.agents_executed.append("quality_controller")
+        
+        result = self.crew.quality_controller().execute(
+            draft=self.state.current_draft,
+            sources=self.state.research_sources,
+            styleguide_context=self.styleguide_context
+        )
+        
+        self.state.quality_score = result.quality_score
+        self.state.quality_issues = result.improvement_suggestions
+        
+        if not result.is_approved or result.requires_human_review:
+            logger.warning("🚨 Quality check failed or requires human review")
+            self.ui_bridge.request_human_review(result)
+            return "await_human_feedback"
+        
+        return "finalize_output"
+    
+    @listen("finalize_output")
+    def finalize_output(self):
+        """Prepare final output package"""
+        logger.info("📦 Finalizing output...")
+        self.state.current_stage = "completed"
+        
+        self.state.final_draft = self.state.current_draft
+        self.state.total_processing_time = (
+            datetime.now() - self.state.flow_start_time
+        ).total_seconds()
+        
+        # Prepare metadata
+        self.state.publication_metadata = {
+            "topic": self.state.topic_title,
+            "platform": self.state.platform,
+            "viral_score": self.state.viral_score,
+            "quality_score": self.state.quality_score,
+            "style_score": self.state.style_score,
+            "audience_alignment": self.state.audience_scores,
+            "revision_count": self.state.revision_count,
+            "processing_time": self.state.total_processing_time,
+            "agents_executed": self.state.agents_executed
+        }
+        
+        logger.info("✨ Writing Flow completed successfully!")
+        self.ui_bridge.send_completion_notice(self.state)
+        
+        return self.state
+
+
+def kickoff():
+    """Entry point for the flow"""
+    # Example input from Kolegium - using REAL normalized content
+    initial_state = WritingFlowState(
+        topic_title="General Workshop Content Framework",
+        platform="LinkedIn",
+        file_path="content/normalized/2025-07-31-general-workshop-2-content-framework.md",  # Specific file
+        content_type="STANDALONE",
+        content_ownership="ORIGINAL",  # Our own content
+        viral_score=7.5,
+        editorial_recommendations="Focus on practical framework implementation"
+    )
+    
+    flow = AIWritingFlow()
+    # Pass state as dictionary
+    flow.kickoff(initial_state.model_dump())
+
+
+def plot():
+    """Generate flow diagram"""
+    flow = AIWritingFlow()
+    flow.plot("ai_writing_flow_diagram.png")
+
+
+if __name__ == "__main__":
+    kickoff()

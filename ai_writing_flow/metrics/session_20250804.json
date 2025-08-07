@@ -1,0 +1,58 @@
+{
+  "counters": {
+    "total_flows": 4,
+    "successful_flows": 4,
+    "failed_flows": 0,
+    "total_kb_queries": 2,
+    "total_cache_hits": 2,
+    "total_cache_misses": 0,
+    "total_errors": 0
+  },
+  "completed_flows": [
+    {
+      "flow_id": "dashboard_test",
+      "flow_type": "test_flow",
+      "start_time": 1754338725.546859,
+      "end_time": 1754338725.5470688,
+      "status": "completed",
+      "stages_completed": [],
+      "kb_queries": 1,
+      "cache_hits": 1,
+      "cache_misses": 0,
+      "errors": [],
+      "metadata": {}
+    }
+  ],
+  "summary": {
+    "timestamp": "2025-08-04T22:18:45.547198",
+    "session_duration": 0.0003440380096435547,
+    "flow_metrics": {
+      "total_flows": 1,
+      "active_flows": 0,
+      "completed_flows": 1,
+      "success_rate": 1.0,
+      "avg_duration": 0.000209808349609375,
+      "flows_by_type": {
+        "test_flow": 1
+      },
+      "recent_errors": []
+    },
+    "kb_metrics": {
+      "total_queries": 2,
+      "cache_hits": 2,
+      "cache_misses": 0,
+      "cache_hit_rate": 1.0,
+      "queries_per_flow": 0.5
+    },
+    "performance_metrics": {},
+    "counters": {
+      "total_flows": 4,
+      "successful_flows": 4,
+      "failed_flows": 0,
+      "total_kb_queries": 2,
+      "total_cache_hits": 2,
+      "total_cache_misses": 0,
+      "total_errors": 0
+    }
+  }
+}

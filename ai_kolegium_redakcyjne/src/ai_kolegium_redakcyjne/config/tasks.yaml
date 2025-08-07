@@ -1,0 +1,89 @@
+# Vector Wave - AI Kolegium Redakcyjne Tasks Configuration
+
+topic_discovery:
+  description: >
+    STEP 1: Use Local Content Reader tool WITHOUT any parameters to scan ALL existing content.
+    STEP 2: Use Content Analyzer tool with the JSON output from step 1 to identify patterns and gaps.
+    STEP 3: Based on gaps identified, generate NEW trending topics in AI, technology, and digital culture.
+    
+    Combine insights from local content with external trends. Build upon existing research.
+    Focus on topics with viral potential and high engagement probability.
+    Current focus areas: {categories}
+    Date: {current_date}
+    
+    APPLY STYLEGUIDE RULES:
+    - Minimum 3 primary sources per topic (can include local content as source)
+    - Include exact metrics and data points
+    - Avoid forbidden phrases: revolutionary, game-changing, cutting-edge, leverage
+  expected_output: >
+    A TopicDiscoveryList object with a 'topics' array containing 10-15 discovered topics.
+    Each topic should have: topic_id, title, summary, source (including local_content_path if applicable), 
+    category, discovery_timestamp, and initial_engagement_signals. 
+    Also include: total_found count, categories searched, and local_content_utilized count.
+  agent: content_scout
+
+viral_analysis:
+  description: >
+    Analyze the discovered topics for viral potential and engagement prediction.
+    Use multiple data sources including Google Trends, social media metrics, 
+    historical performance data, and content characteristics.
+    Calculate viral score and provide reasoning for each topic.
+  expected_output: >
+    A ViralAnalysisList object with 'analyses' array containing viral analysis for each topic.
+    Each analysis should include: topic_id, viral_score (0-1), engagement_prediction,
+    trend_velocity, competitive_landscape, recommendation (strong_yes/yes/maybe/no), 
+    and reasoning. Include average_viral_score and recommendations_summary.
+  agent: trend_analyst
+  context:
+    - topic_discovery
+
+editorial_review:
+  description: >
+    Review analyzed topics and make editorial decisions based on:
+    - Brand alignment and content guidelines
+    - Audience preferences and interests
+    - Controversy level assessment
+    - Resource requirements for content creation
+    Flag topics requiring human review (controversy_level > 0.7)
+  expected_output: >
+    An EditorialDecision object with fields: topic_id, decision (approve/reject/human_review),
+    controversy_level (0-1), brand_alignment (0-1), priority (high/medium/low),
+    editorial_notes, and human_review_reason (if escalated).
+  agent: editorial_strategist
+  context:
+    - topic_discovery
+    - viral_analysis
+
+quality_check:
+  description: >
+    Perform comprehensive quality assessment on approved topics:
+    - Fact-check key claims using reliable sources
+    - Verify source credibility and bias
+    - Check for potential plagiarism or copyright issues
+    - Assess information accuracy and completeness
+    - Identify any missing context or corrections needed
+  expected_output: >
+    A QualityAssessment object with fields: topic_id, quality_score (0-1),
+    fact_check_results (dict), source_credibility (assessment string),
+    plagiarism_check (dict), required_corrections (list), and quality_approved (boolean).
+  agent: quality_assessor
+  context:
+    - topic_discovery
+    - editorial_review
+
+final_coordination:
+  description: >
+    Synthesize all agent analyses into final editorial decisions.
+    Build consensus when agents disagree. Generate comprehensive 
+    report for human editors including visualizations and recommendations.
+    Create action items for content creation team.
+  expected_output: >
+    An EditorialReport object with fields: executive_summary, approved_topics (list),
+    rejected_topics (list), human_review_queue (list), content_calendar (list),
+    resource_allocation (dict), performance_predictions (dict), and visual_dashboard_data (dict).
+  agent: decision_coordinator
+  context:
+    - topic_discovery
+    - viral_analysis
+    - editorial_review
+    - quality_check

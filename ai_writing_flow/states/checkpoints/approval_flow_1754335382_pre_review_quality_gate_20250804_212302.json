@@ -1,0 +1,49 @@
+{
+  "flow_id": "approval_flow_1754335382",
+  "stage": "pre_review_quality_gate",
+  "timestamp": "20250804_212302",
+  "state": {
+    "id": "9d13fb8e-d12f-4ee4-8d8b-495055e48994",
+    "flow_id": "approval_flow_1754335382",
+    "parent_flow_id": null,
+    "current_review_point": "quality_gate",
+    "pending_review": true,
+    "review_request_id": null,
+    "content_type": "",
+    "content_preview": "Final quality-checked content",
+    "full_content": {
+      "quality_score": 0.85,
+      "checklist_status": "All checks passed",
+      "issues": [],
+      "recommendations": [
+        "Consider adding more examples"
+      ],
+      "content": "Final quality-checked content"
+    },
+    "review_decisions": [
+      {
+        "review_point": "draft_completion",
+        "decision": "approve",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.00042176246643066406,
+        "timestamp": 1754335382.3088078
+      }
+    ],
+    "latest_decision": "approve",
+    "human_feedback": "Auto-approved (test mode)",
+    "review_start_time": 1754335382.3089228,
+    "total_review_time": 0.00042176246643066406,
+    "review_count": 1,
+    "timeout_count": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "context": {
+      "quality_score": 0.85,
+      "issues_found": [],
+      "recommendations": [
+        "Consider adding more examples"
+      ]
+    }
+  }
+}

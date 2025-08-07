@@ -1,0 +1,277 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # === TESTING ===
+  test-python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, ai_writing_flow]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        cd ${{ matrix.service }}
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+    
+    - name: Run tests
+      run: |
+        cd ${{ matrix.service }}
+        python -m pytest --cov=src --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./${{ matrix.service }}/coverage.xml
+        flags: ${{ matrix.service }}
+        fail_ci_if_error: false
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    if: false  # Enable when frontend is ready
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: vector-wave-ui/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd vector-wave-ui
+        npm ci
+    
+    - name: Run tests
+      run: |
+        cd vector-wave-ui
+        npm test -- --coverage --watchAll=false
+    
+    - name: Build
+      run: |
+        cd vector-wave-ui
+        npm run build
+
+  # === SECURITY SCANNING ===
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [test-python]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Python safety check
+      run: |
+        pip install safety
+        find . -name requirements.txt -exec safety check --file {} \;
+
+  # === BUILD & PUSH IMAGES ===
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [test-python, security-scan]
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        include:
+          - service: api
+            context: .
+            dockerfile: Dockerfile
+          - service: knowledge-base
+            context: ../knowledge-base
+            dockerfile: docker/Dockerfile
+          - service: content-scout
+            context: ./services/content-scout
+            dockerfile: Dockerfile
+          - service: trend-analyst
+            context: ./services/trend-analyst
+            dockerfile: Dockerfile
+          - service: editorial-strategist
+            context: ./services/editorial-strategist
+            dockerfile: Dockerfile
+          # - service: frontend
+          #   context: ./vector-wave-ui
+          #   dockerfile: Dockerfile
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ${{ matrix.context }}
+        file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          VCS_REF=${{ github.sha }}
+          VERSION=${{ steps.meta.outputs.version }}
+
+  # === DEPLOY TO STAGING ===
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Deploy to staging
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          cd /home/editorial/kolegium-staging
+          git pull origin develop
+          docker-compose -f docker-compose.staging.yml pull
+          docker-compose -f docker-compose.staging.yml up -d
+          docker system prune -f
+
+  # === DEPLOY TO PRODUCTION ===
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Deploy to production
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: 46.101.156.14
+        username: editorial-ai
+        key: ${{ secrets.DO_SSH_KEY }}
+        script: |
+          cd /home/editorial-ai/kolegium
+          git pull origin main
+          docker-compose -f docker-compose.prod.yml down
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Health check
+          sleep 30
+          curl -f https://${{ secrets.DOMAIN_NAME }}/api/health || exit 1
+          
+          # Cleanup
+          docker system prune -f
+    
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        text: |
+          Deployment to production ${{ job.status }}
+          Commit: ${{ github.event.head_commit.message }}
+          Author: ${{ github.event.head_commit.author.name }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        channel: '#deployments'
+
+  # === RELEASE NOTES ===
+  create-release:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate changelog
+      id: changelog
+      uses: mikepenz/release-changelog-builder-action@v3
+      with:
+        configuration: ".github/changelog-config.json"
+        outputFile: "CHANGELOG.md"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

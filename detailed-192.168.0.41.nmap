@@ -1,0 +1,10 @@
+# Nmap 7.97 scan initiated Mon Aug  4 18:31:16 2025 as: nmap -Pn -sT -sV -p 1-10000 -oN detailed-192.168.0.41.nmap 192.168.0.41
+Nmap scan report for 192.168.0.41
+Host is up (0.0076s latency).
+Not shown: 9998 closed tcp ports (conn-refused)
+PORT     STATE    SERVICE VERSION
+970/tcp  filtered unknown
+8173/tcp filtered unknown
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Aug  4 18:35:12 2025 -- 1 IP address (1 host up) scanned in 235.68 seconds

@@ -1,0 +1,27 @@
+{
+    "channels": {
+        "console": {
+            "enabled": true,
+            "format": "colored",
+            "min_severity": "MEDIUM"
+        },
+        "file": {
+            "enabled": true,
+            "path": "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/monitoring/logs/alerts.log",
+            "format": "json",
+            "min_severity": "LOW",
+            "rotation": {
+                "enabled": true,
+                "max_size_mb": 10,
+                "max_files": 5
+            }
+        },
+        "webhook": {
+            "enabled": false,
+            "url": "http://localhost:9090/alerts",
+            "timeout_seconds": 5,
+            "min_severity": "HIGH",
+            "retry_count": 3
+        }
+    }
+}

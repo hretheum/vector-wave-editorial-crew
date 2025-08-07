@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AG-UI Debug Test</title>
+    <script src="https://unpkg.com/@copilotkit/agui-client@latest/dist/index.umd.js"></script>
+    <link href="https://unpkg.com/@copilotkit/agui-client@latest/dist/index.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app"></div>
+    <script>
+        console.log('AGUIClient available:', typeof AGUIClient);
+        console.log('AGUIClient contents:', AGUIClient);
+        
+        if (AGUIClient && AGUIClient.Client) {
+            console.log('Creating client...');
+            const client = new AGUIClient.Client({
+                endpoint: 'http://localhost:8000/awp',
+                title: 'Vector Wave AI Editorial Assistant',
+                welcomeMessage: 'Cześć! Jestem asystentem AI Vector Wave.',
+                placeholder: 'Wpisz wiadomość...'
+            });
+            console.log('Client created:', client);
+            
+            console.log('Mounting to #app...');
+            client.mount('#app');
+            console.log('Mounted!');
+        } else {
+            console.error('AGUIClient.Client not found!');
+        }
+    </script>
+</body>
+</html>

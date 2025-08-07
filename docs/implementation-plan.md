@@ -48,6 +48,36 @@
   - Fact checking integration
   - Source verification
   - Quality scoring system
+
+### Sprint 3.3: Custom Ideas Analysis (NEW) - Container-First Approach
+
+#### Phase 1: Backend Foundation (1.5h)
+- [ ] **Step 1** (15min): Basic endpoint z mock data + curl test
+- [ ] **Step 2** (20min): Folder context analysis (mock → real)
+- [ ] **Step 3** (30min): Single idea analysis z static scores
+- [ ] **Step 4** (20min): Redis cache integration + test
+- [ ] **Step 5** (30min): AI integration dla real scoring
+
+#### Phase 2: Frontend Minimal UI (1.5h)
+- [ ] **Step 1** (10min): Mock button w results + console.log test
+- [ ] **Step 2** (15min): Basic textarea toggle + Enter handling
+- [ ] **Step 3** (20min): API integration + console response
+- [ ] **Step 4** (15min): Option+Enter support cross-platform
+- [ ] **Step 5** (20min): Results display w UI + best highlight
+
+#### Phase 3: Polish & Edge Cases (1h)
+- [ ] **Step 1** (15min): Error handling + loading states
+- [ ] **Step 2** (15min): UI transitions + responsive design
+- [ ] **Step 3** (20min): Integration tests + edge cases
+
+#### Phase 4: AI-Powered Dashboard with Preload (1.5h)
+- [ ] **Step 6a** (20min): Update analyze-potential z AI zamiast mocks
+- [ ] **Step 6b** (25min): Create preload mechanism na startup
+- [ ] **Step 6c** (15min): Modify endpoint dla preload check
+- [ ] **Step 6d** (15min): Add preload status monitoring
+- [ ] **Step 6e** (20min): Auto-refresh background task
+
+**Total: ~5.5h w małych, testowalnych krokach**
   - Assessment events
 #### Tydzień 4: Frontend Foundation
 - [ ] **Day 22-24**: React Setup z CopilotKit

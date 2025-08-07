@@ -1,0 +1,90 @@
+{
+  "flow_name": "ui_integrated_flow",
+  "total_duration": 0.3594522476196289,
+  "peak_memory_mb": 0.5168180465698242,
+  "avg_cpu_percent": 32.1,
+  "sections": [
+    {
+      "name": "ui_bridge_init",
+      "duration": 0.08512210845947266,
+      "memory_mb": 0.5022563934326172,
+      "cpu_percent": 0.0,
+      "subsections": []
+    },
+    {
+      "name": "session_management",
+      "duration": 0.051294803619384766,
+      "memory_mb": 0.22827816009521484,
+      "cpu_percent": 16.2,
+      "subsections": []
+    },
+    {
+      "name": "progress_updates",
+      "duration": 0.11200213432312012,
+      "memory_mb": 0.07683467864990234,
+      "cpu_percent": 94.7,
+      "subsections": [
+        {
+          "name": "update_0",
+          "duration": 0.020314693450927734,
+          "memory_mb": 0.07575798034667969,
+          "cpu_percent": 2.6,
+          "subsections": []
+        },
+        {
+          "name": "update_1",
+          "duration": 0.02173328399658203,
+          "memory_mb": 0.07476234436035156,
+          "cpu_percent": 2.6,
+          "subsections": []
+        },
+        {
+          "name": "update_2",
+          "duration": 0.02032184600830078,
+          "memory_mb": 0.07385826110839844,
+          "cpu_percent": 3.0,
+          "subsections": []
+        },
+        {
+          "name": "update_3",
+          "duration": 0.025082111358642578,
+          "memory_mb": 0.07295417785644531,
+          "cpu_percent": 2.7,
+          "subsections": []
+        },
+        {
+          "name": "update_4",
+          "duration": 0.02119612693786621,
+          "memory_mb": 0.07213306427001953,
+          "cpu_percent": 4.0,
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "name": "feedback_processing",
+      "duration": 0.10512304306030273,
+      "memory_mb": 0.07141780853271484,
+      "cpu_percent": 2.6,
+      "subsections": []
+    }
+  ],
+  "bottlenecks": [
+    {
+      "section": "progress_updates",
+      "duration": 0.11200213432312012,
+      "issues": [
+        {
+          "type": "high_cpu",
+          "severity": "medium",
+          "details": "CPU usage: 94.7%"
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    "Add DEV_MODE flag to skip non-essential operations",
+    "Implement progressive loading for better perceived performance"
+  ],
+  "timestamp": "2025-08-04T22:02:45.401273"
+}

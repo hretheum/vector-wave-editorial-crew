@@ -1,0 +1,62 @@
+{
+  "timestamp": "2025-08-04T12:05:21.428976",
+  "overall_improvement": 97.95362328016256,
+  "targets_met": 5,
+  "total_tests": 5,
+  "success": true,
+  "individual_results": [
+    {
+      "test": "knowledge_search",
+      "baseline_ms": 26310.0,
+      "actual_ms": 51.38373374938965,
+      "improvement_percent": 99.80469884549834,
+      "target_met": true,
+      "cache_hit_rate": 0.0,
+      "optimization_efficiency": 0.85
+    },
+    {
+      "test": "research",
+      "baseline_ms": 26920.0,
+      "actual_ms": 604.0329933166504,
+      "improvement_percent": 97.75619244681779,
+      "target_met": true,
+      "cached_results": 0,
+      "parallel_groups": 2
+    },
+    {
+      "test": "draft_generation",
+      "baseline_ms": 17210.0,
+      "actual_ms": 605.9181690216064,
+      "improvement_percent": 96.47926688540612,
+      "target_met": true,
+      "peak_memory_mb": 45.0,
+      "memory_improvement_percent": 85.0,
+      "streaming_used": true,
+      "cache_hit_rate": 0.6
+    },
+    {
+      "test": "audience_alignment",
+      "baseline_ms": 21540.0,
+      "actual_ms": 403.5923480987549,
+      "improvement_percent": 98.12631221866873,
+      "target_met": true,
+      "cache_hits": 2,
+      "avg_confidence": 0.82
+    },
+    {
+      "test": "quality_assessment",
+      "baseline_ms": 14000.0,
+      "actual_ms": 503.82280349731445,
+      "improvement_percent": 96.40126568930489,
+      "target_met": true,
+      "cache_hits": 2,
+      "avg_quality_score": 0.8697142857142858
+    }
+  ],
+  "summary": {
+    "total_baseline_ms": 105980.0,
+    "total_optimized_ms": 2168.750047683716,
+    "time_saved_ms": 103811.24995231628,
+    "performance_score": 97.95362328016256
+  }
+}

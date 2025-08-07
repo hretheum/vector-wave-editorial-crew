@@ -1,0 +1,62 @@
+{
+  "flow_id": "approval_flow_1754335382",
+  "stage": "pre_review_topic_viability",
+  "timestamp": "20250804_212302",
+  "state": {
+    "id": "9d13fb8e-d12f-4ee4-8d8b-495055e48994",
+    "flow_id": "approval_flow_1754335382",
+    "parent_flow_id": null,
+    "current_review_point": "topic_viability",
+    "pending_review": true,
+    "review_request_id": null,
+    "content_type": "",
+    "content_preview": "{\n  \"viability_score\": 0.25,\n  \"low_score_reasons\": [\n    \"Topic too niche\",\n    \"Low search volume\"\n  ],\n  \"alternative_topics\": [\n    \"Topic A\",\n    \"Topic B\"\n  ]\n}",
+    "full_content": {
+      "viability_score": 0.25,
+      "low_score_reasons": [
+        "Topic too niche",
+        "Low search volume"
+      ],
+      "alternative_topics": [
+        "Topic A",
+        "Topic B"
+      ]
+    },
+    "review_decisions": [
+      {
+        "review_point": "draft_completion",
+        "decision": "approve",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.00042176246643066406,
+        "timestamp": 1754335382.3088078
+      },
+      {
+        "review_point": "quality_gate",
+        "decision": "revise",
+        "feedback": "Auto-approved (test mode)",
+        "execution_time": 0.00017309188842773438,
+        "timestamp": 1754335382.309099
+      }
+    ],
+    "latest_decision": "revise",
+    "human_feedback": "Auto-approved (test mode)",
+    "review_start_time": 1754335382.309165,
+    "total_review_time": 0.0005948543548583984,
+    "review_count": 2,
+    "timeout_count": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "context": {
+      "viability_score": 0.25,
+      "reasons": [
+        "Topic too niche",
+        "Low search volume"
+      ],
+      "alternatives": [
+        "Topic A",
+        "Topic B"
+      ]
+    }
+  }
+}

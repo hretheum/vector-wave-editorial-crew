@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # === INFRASTRUCTURE ===
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: kolegium
+      POSTGRES_USER: kolegium
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kolegium_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kolegium -d kolegium"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # === KNOWLEDGE BASE ===
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  knowledge-base:
+    build:
+      context: ../knowledge-base
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8082:8080"
+      - "9090:9090"  # Prometheus metrics
+    environment:
+      - KB_LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - POSTGRES_URL=postgresql://kolegium:${DB_PASSWORD:-kolegium_pass}@postgres:5432/kolegium
+    volumes:
+      - ../knowledge-base/data:/app/data:ro
+      - kb_cache:/app/cache
+    depends_on:
+      - redis
+      - chroma
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/knowledge/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # === KOLEGIUM API ===
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://kolegium:${DB_PASSWORD:-kolegium_pass}@postgres:5432/kolegium
+      - REDIS_URL=redis://redis:6379
+      - KNOWLEDGE_BASE_URL=http://knowledge-base:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET:-development_secret}
+      - ENVIRONMENT=development
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - knowledge-base
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # === MONITORING ===
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # === OPTIONAL: Frontend (uncomment when ready) ===
+  # frontend:
+  #   build:
+  #     context: ./vector-wave-ui
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8001
+  #     - REACT_APP_WS_URL=ws://localhost:8001/ws
+  #   depends_on:
+  #     - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  chroma_data:
+  kb_cache:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: kolegium_network

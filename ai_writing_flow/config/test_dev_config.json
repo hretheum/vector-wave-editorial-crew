@@ -1,0 +1,26 @@
+{
+  "dev_mode": true,
+  "hot_reload": true,
+  "skip_validation": false,
+  "caching": {
+    "enabled": true,
+    "ttl": 3600,
+    "dir": ".cache/dev"
+  },
+  "performance": {
+    "smaller_models": true,
+    "model": "gpt-3.5-turbo",
+    "max_concurrent": 2,
+    "timeout": 30
+  },
+  "kb": {
+    "cache_enabled": true,
+    "cache_size": 100,
+    "local_fallback": true
+  },
+  "shortcuts": {
+    "auto_approve": true,
+    "mock_services": false,
+    "verbose": true
+  }
+}

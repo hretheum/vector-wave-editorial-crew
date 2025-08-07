@@ -1,0 +1,14 @@
+{
+    "status": "deployed",
+    "version": "v2.0.0",
+    "deployment_type": "minimal",
+    "deployment_time": "2025-08-04T11:25:32Z",
+    "environment": "local_production",
+    "monitoring_enabled": true,
+    "components": {
+        "phase1_core": "active",
+        "phase2_linear": "active", 
+        "phase3_monitoring": "active",
+        "crewai_integration": "disabled"
+    }
+}

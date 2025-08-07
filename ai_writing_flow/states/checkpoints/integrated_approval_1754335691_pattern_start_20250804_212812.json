@@ -1,0 +1,40 @@
+{
+  "flow_id": "integrated_approval_1754335691",
+  "stage": "pattern_start",
+  "timestamp": "20250804_212812",
+  "state": {
+    "id": "40ce85ca-2366-4f8b-9d6d-3e3e0bd47bf9",
+    "flow_id": "integrated_approval_1754335691",
+    "parent_flow_id": null,
+    "active_pattern": "timeout_test",
+    "pattern_config": {
+      "name": "timeout_test",
+      "description": "Test timeout handling",
+      "review_points": [
+        "draft_completion",
+        "quality_gate"
+      ],
+      "enable_timeout": true,
+      "timeout_behavior": "skip",
+      "max_total_time": 1,
+      "enable_revisions": false,
+      "max_revisions": 3
+    },
+    "flow_start_time": 1754335691.338677,
+    "total_elapsed_time": 0.0,
+    "timeouts_occurred": 0,
+    "reviews_completed": [],
+    "reviews_pending": [
+      "draft_completion",
+      "quality_gate"
+    ],
+    "current_review_stage": null,
+    "approval_flow_id": null,
+    "feedback_flow_id": null
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "pattern": "timeout_test",
+    "total_reviews": 2
+  }
+}

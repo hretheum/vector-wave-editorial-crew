@@ -1,0 +1,45 @@
+{
+  "flow_id": "integrated_approval_1754335691",
+  "stage": "pattern_complete",
+  "timestamp": "20250804_212811",
+  "state": {
+    "id": "a8893302-6edc-42ed-8503-d0db0ea197db",
+    "flow_id": "integrated_approval_1754335691",
+    "parent_flow_id": null,
+    "active_pattern": "custom_fast",
+    "pattern_config": {
+      "name": "custom_fast",
+      "description": "Custom fast approval",
+      "review_points": [
+        "draft_completion"
+      ],
+      "enable_timeout": true,
+      "timeout_behavior": "skip",
+      "max_total_time": 300,
+      "enable_revisions": false,
+      "max_revisions": 3
+    },
+    "flow_start_time": 1754335691.336234,
+    "total_elapsed_time": 0.0017178058624267578,
+    "timeouts_occurred": 0,
+    "reviews_completed": [
+      "draft_completion"
+    ],
+    "reviews_pending": [
+      "draft_completion"
+    ],
+    "current_review_stage": "draft_completion",
+    "approval_flow_id": "approval_flow_1754335691",
+    "feedback_flow_id": null
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "reviews_completed": [
+      "draft_completion"
+    ],
+    "reviews_skipped": [],
+    "total_revisions": 0,
+    "timeouts": 0,
+    "final_status": "completed"
+  }
+}

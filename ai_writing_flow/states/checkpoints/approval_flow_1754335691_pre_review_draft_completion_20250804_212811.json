@@ -1,0 +1,31 @@
+{
+  "flow_id": "approval_flow_1754335691",
+  "stage": "pre_review_draft_completion",
+  "timestamp": "20250804_212811",
+  "state": {
+    "id": "2fcbb44a-c565-4ed1-b2e0-679ba0af2b2f",
+    "flow_id": "approval_flow_1754335691",
+    "parent_flow_id": null,
+    "current_review_point": "draft_completion",
+    "pending_review": true,
+    "review_request_id": null,
+    "content_type": "",
+    "content_preview": "{}",
+    "full_content": {},
+    "review_decisions": [],
+    "latest_decision": null,
+    "human_feedback": null,
+    "review_start_time": 1754335691.3377259,
+    "total_review_time": 0.0,
+    "review_count": 0,
+    "timeout_count": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "context": {
+      "word_count": 0,
+      "platform": "Unknown",
+      "content_type": "general"
+    }
+  }
+}

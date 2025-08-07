@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # === LOAD BALANCER ===
+  nginx:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # === INFRASTRUCTURE ===
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: kolegium
+      POSTGRES_USER: kolegium
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kolegium -d kolegium"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # === KNOWLEDGE BASE ===
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  knowledge-base:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-knowledge-base:latest
+    environment:
+      - KB_LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - POSTGRES_URL=postgresql://kolegium:${DB_PASSWORD}@postgres:5432/kolegium
+    volumes:
+      - kb_data:/app/data:ro
+      - kb_cache:/app/cache
+    depends_on:
+      - redis
+      - chroma
+      - postgres
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/knowledge/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # === KOLEGIUM SERVICES ===
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-api:latest
+    environment:
+      - DATABASE_URL=postgresql://kolegium:${DB_PASSWORD}@postgres:5432/kolegium
+      - REDIS_URL=redis://redis:6379
+      - KNOWLEDGE_BASE_URL=http://knowledge-base:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - knowledge-base
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  content-scout:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-content-scout:latest
+    environment:
+      - DATABASE_URL=postgresql://kolegium:${DB_PASSWORD}@postgres:5432/kolegium
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  trend-analyst:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-trend-analyst:latest
+    environment:
+      - DATABASE_URL=postgresql://kolegium:${DB_PASSWORD}@postgres:5432/kolegium
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_TRENDS_API_KEY=${GOOGLE_TRENDS_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  editorial-strategist:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-editorial:latest
+    environment:
+      - DATABASE_URL=postgresql://kolegium:${DB_PASSWORD}@postgres:5432/kolegium
+      - REDIS_URL=redis://redis:6379
+      - KNOWLEDGE_BASE_URL=http://knowledge-base:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+      - knowledge-base
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # === FRONTEND ===
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/kolegium-frontend:latest
+    environment:
+      - REACT_APP_API_URL=https://${DOMAIN_NAME}/api
+      - REACT_APP_WS_URL=wss://${DOMAIN_NAME}/ws
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # === MONITORING ===
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://${DOMAIN_NAME}/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # === AUTO-DEPLOYMENT ===
+  watchtower:
+    image: containrrr/watchtower:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json:ro
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_NOTIFICATIONS=slack
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${SLACK_WEBHOOK}
+      - WATCHTOWER_NOTIFICATION_SLACK_IDENTIFIER=kolegium-watchtower
+    command: --interval 60 --cleanup --label-enable
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  chroma_data:
+  kb_data:
+  kb_cache:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: kolegium_production
+    driver: bridge

@@ -32,17 +32,17 @@ Event-driven microservices z Clean Architecture, gdzie każdy domain service jes
     - Python venv with crewai, fastapi, redis ✅
   - **Files**: `/docs/digital-ocean-setup.md` (existing)
 
-- [ ] **Task 1.1**: CrewAI project scaffolding i setup
-  - **Agent**: project-coder
-  - **Time**: 2h
+- [x] **Task 1.1**: Knowledge Base integration ✅ [COMPLETED 2025-08-03]
+  - **Agent**: deployment-specialist + project-coder
+  - **Time**: 6h
   - **Dependencies**: Task 1.0
   - **Success**:
-    - `crewai create kolegium-redakcyjne` executed
-    - Basic agents.py i tasks.py configured
-    - requirements.txt z Vector Wave dependencies
-    - .env setup z API keys
-    - First test run successful (`crewai run`)
-  - **Files**: Complete CrewAI project structure, custom agents/tasks
+    - Standalone KB service w kontenerach (port 8082) ✅
+    - PostgreSQL + Redis + ChromaDB integration ✅
+    - Enhanced Knowledge Tools z adapter pattern ✅
+    - Circuit breaker i hybrid search strategies ✅
+    - Testy integracyjne przechodzą z CrewAI agents ✅
+  - **Files**: `knowledge_adapter.py`, `enhanced_knowledge_tools.py`, docker-compose.yml
 
 - [ ] **Task 1.2**: AG-UI integration z CrewAI agents
   - **Agent**: project-coder  
@@ -55,27 +55,29 @@ Event-driven microservices z Clean Architecture, gdzie każdy domain service jes
     - TOPIC_DISCOVERED + CONTENT_ANALYSIS events working
   - **Files**: `src/tools/agui_tools.py`, FastAPI websocket endpoints
 
-- [ ] **Task 1.3**: Docker containers setup
+- [x] **Task 1.3**: Docker containers setup ✅ [COMPLETED 2025-08-03]
   - **Agent**: deployment-specialist
   - **Time**: 3h
   - **Dependencies**: Task 1.2
   - **Success**:
-    - docker-compose.yml dla development
-    - docker-compose.prod.yml dla production
-    - Multi-stage Dockerfiles dla każdego service
-    - Health checks dla wszystkich containers
-  - **Files**: `docker-compose.yml`, `docker-compose.prod.yml`, `services/*/Dockerfile`
+    - docker-compose.yml dla development ✅
+    - docker-compose.prod.yml dla production z ghcr.io ✅
+    - Dockerfile dla głównego API ✅
+    - Health checks dla wszystkich containers ✅
+    - Monitoring stack (Prometheus + Grafana) ✅
+  - **Files**: `docker-compose.yml`, `docker-compose.prod.yml`, `Dockerfile`
 
-- [ ] **Task 1.4**: GitHub Actions CI/CD pipeline
+- [x] **Task 1.4**: GitHub Actions CI/CD pipeline ✅ [COMPLETED 2025-08-03]
   - **Agent**: deployment-specialist
   - **Time**: 4h
   - **Dependencies**: Task 1.3
   - **Success**:
-    - Build & test na każdym PR
-    - Push images do ghcr.io
-    - Auto-deploy do droplet na main merge
-    - Basic security scanning
-  - **Files**: `.github/workflows/ci-cd.yml`, `scripts/deploy.sh`
+    - Build & test na każdym PR ✅
+    - Push images do ghcr.io ✅
+    - Auto-deploy przez Watchtower ✅
+    - Security scanning (Trivy) ✅
+    - Multi-service build matrix ✅
+  - **Files**: `.github/workflows/ci-cd.yml`, `DEPLOYMENT_GUIDE.md`
 
 - [ ] **Task 1.5**: PostgreSQL Event Store implementation
   - **Agent**: project-coder

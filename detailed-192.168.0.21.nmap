@@ -1,0 +1,20 @@
+# Nmap 7.97 scan initiated Mon Aug  4 18:29:46 2025 as: nmap -sT -sV -p 1-10000 -oN detailed-192.168.0.21.nmap 192.168.0.21
+Nmap scan report for 192.168.0.21
+Host is up (0.0080s latency).
+Not shown: 9991 closed tcp ports (conn-refused)
+PORT     STATE    SERVICE    VERSION
+853/tcp  open     ssl/domain (generic dns response: NOTIMP)
+2125/tcp filtered lockstep
+3012/tcp filtered twsdss
+5000/tcp open     upnp?
+6834/tcp filtered unknown
+7000/tcp open     tcpwrapped
+7080/tcp filtered empowerid
+7100/tcp open     tcpwrapped
+7568/tcp filtered unknown
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port853-TCP:V=7.97%T=SSL%I=7%D=8/4%Time=6890E02F%P=arm-apple-darwin24.4
+SF:.0%r(DNSStatusRequestTCP,E,"\0\x0c\0\0\x90\x04\0\0\0\0\0\0\0\0");
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Aug  4 18:30:52 2025 -- 1 IP address (1 host up) scanned in 66.34 seconds

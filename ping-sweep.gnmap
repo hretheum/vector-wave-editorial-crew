@@ -1,0 +1,6 @@
+# Nmap 7.97 scan initiated Mon Aug  4 16:37:25 2025 as: nmap -sn -oG ping-sweep.gnmap 192.168.0.0/24
+Host: 192.168.0.1 ()	Status: Up
+Host: 192.168.0.21 (Kino-domowe.play.pl)	Status: Up
+Host: 192.168.0.41 ()	Status: Up
+Host: 192.168.0.174 ()	Status: Up
+# Nmap done at Mon Aug  4 16:38:18 2025 -- 256 IP addresses (4 hosts up) scanned in 52.62 seconds

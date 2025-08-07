@@ -1,0 +1,63 @@
+{
+  "flow_id": "research_flow_1754333683",
+  "timestamp": "20250804_205450",
+  "state": {
+    "id": "1f807278-8de5-45c4-97e7-d44e4f5f8dfc",
+    "flow_id": "research_flow_1754333683",
+    "topic_title": "Testing State Persistence in CrewAI Flow",
+    "platform": "Blog",
+    "content_type": "general",
+    "key_themes": [
+      "state management",
+      "persistence",
+      "recovery"
+    ],
+    "editorial_recommendations": "Technical documentation",
+    "current_stage": "content_analysis",
+    "skip_research": false,
+    "research_required": true,
+    "content_analysis": {
+      "content_type": "STANDARD",
+      "viral_score": 0.5,
+      "complexity_level": "intermediate",
+      "recommended_flow_path": "standard_flow",
+      "kb_insights": [
+        "Mock analysis based on keywords"
+      ],
+      "processing_time": 0.1,
+      "target_platform": "Blog",
+      "analysis_confidence": 0.8,
+      "key_themes": [
+        "state management",
+        "persistence",
+        "recovery"
+      ],
+      "audience_indicators": {
+        "technical_level": "medium",
+        "target_roles": [
+          "Developers"
+        ]
+      },
+      "content_structure": {
+        "intro": "Overview",
+        "body": "Technical details",
+        "conclusion": "Summary"
+      },
+      "kb_available": false,
+      "search_strategy_used": "KEYWORD_ANALYSIS",
+      "kb_query_count": 0
+    },
+    "research_result": null,
+    "kb_insights": [],
+    "start_time": 1754333683.539372,
+    "analysis_time": 0.0007619857788085938,
+    "research_time": 0.0,
+    "total_sources": 0
+  },
+  "results": {
+    "total_time": 10.5,
+    "decisions_made": 2,
+    "final_output": "test content"
+  },
+  "completion_time": "2025-08-04T20:54:50.587620"
+}

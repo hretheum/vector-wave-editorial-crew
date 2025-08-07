@@ -1,0 +1,53 @@
+{
+  "flow_id": "feedback_flow_1754335523",
+  "stage": "feedback_processing",
+  "timestamp": "20250804_212523",
+  "state": {
+    "id": "b9d62d8c-1b8e-4fba-ba6a-184e430fed2b",
+    "flow_id": "feedback_flow_1754335523",
+    "parent_flow_id": null,
+    "current_stage": "viability_check",
+    "feedback_decision": "skip",
+    "feedback_text": "Topic not suitable for publication",
+    "processing_action": "terminate",
+    "revision_count": 1,
+    "max_revisions": 3,
+    "revision_history": [
+      {
+        "revision_number": 1,
+        "stage": "content_review",
+        "feedback": "Please add more technical details and examples",
+        "timestamp": 1754335523.065762
+      },
+      {
+        "type": "edit",
+        "stage": "final_review",
+        "instructions": [
+          {
+            "type": "replace",
+            "instruction": "Change the title to be more engaging"
+          },
+          {
+            "type": "add",
+            "instruction": "Add a conclusion section"
+          },
+          {
+            "type": "remove",
+            "instruction": "Remove the third paragraph"
+          }
+        ],
+        "timestamp": 1754335523.0659971
+      }
+    ],
+    "original_flow_path": "routing_review",
+    "redirect_flow_path": "technical",
+    "redirect_reason": "This needs to be more technical - redirect to technical flow",
+    "feedback_processing_time": 0.00018286705017089844,
+    "total_revisions_time": 2.5033950805664062e-05
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "decision": "skip",
+    "action": "terminate"
+  }
+}

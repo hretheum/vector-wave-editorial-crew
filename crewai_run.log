@@ -1,0 +1,47 @@
+🐍 Using CrewAI from kolegium project
+Running the Flow
+warning: `VIRTUAL_ENV=/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_kolegium_redakcyjne/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+Using CPython 3.13.5 interpreter at: /opt/homebrew/opt/python@3.13/bin/python3.13
+Creating virtual environment at: .venv
+   Building ai-writing-flow @ file:///Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow
+      Built ai-writing-flow @ file:///Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow
+Installed 205 packages in 1.06s
+╭─────────────────────────────── Flow Execution ───────────────────────────────╮
+│                                                                              │
+│  Starting Flow Execution                                                     │
+│  Name: AIWritingFlow                                                         │
+│  ID: b91c4691-7a1e-4d50-be1c-51b990f11738                                    │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Traceback (most recent call last):
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/bin/kickoff", line 10, in <module>
+    sys.exit(kickoff())
+             ~~~~~~~^^
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/src/ai_writing_flow/main.py", line 275, in kickoff
+    flow.kickoff(initial_state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/crewai/flow/flow.py", line 723, in kickoff
+    return asyncio.run(run_flow())
+           ~~~~~~~~~~~^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/crewai/flow/flow.py", line 721, in run_flow
+    return await self.kickoff_async(inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/crewai/flow/flow.py", line 764, in kickoff_async
+    filtered_inputs = {k: v for k, v in inputs.items() if k != "id"}
+                                        ^^^^^^^^^^^^
+  File "/Users/hretheum/dev/bezrobocie/vector-wave/kolegium/ai_writing_flow/.venv/lib/python3.13/site-packages/pydantic/main.py", line 991, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'WritingFlowState' object has no attribute 'items'
+An error occurred while running the flow: Command '['uv', 'run', 'kickoff']' returned non-zero exit status 1.

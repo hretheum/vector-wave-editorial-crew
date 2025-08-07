@@ -1,0 +1,8 @@
+# Nmap 7.97 scan initiated Mon Aug  4 18:35:12 2025 as: nmap -Pn -sT -sV -p 1-10000 -oN detailed-192.168.0.174.nmap 192.168.0.174
+Nmap scan report for 192.168.0.174
+Host is up.
+All 10000 scanned ports on 192.168.0.174 are in ignored states.
+Not shown: 10000 filtered tcp ports (no-response)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Aug  4 19:42:21 2025 -- 1 IP address (1 host up) scanned in 4028.98 seconds

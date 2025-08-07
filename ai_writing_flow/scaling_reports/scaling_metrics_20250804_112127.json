@@ -1,0 +1,227 @@
+{
+  "linear_scaling": {
+    "test_name": "linear_scaling",
+    "scaling_efficiency": 0.9930627818244884,
+    "max_sustainable_flows": 10,
+    "bottlenecks": [
+      "Thread bottleneck at 8 flows: 1.6x threads"
+    ],
+    "capacity_recommendations": [
+      "Maximum sustainable concurrent flows: 10",
+      "Peak memory usage: 85.0 MB",
+      "Peak CPU utilization: 88.0%",
+      "Scaling efficiency: 99.3%",
+      "Resource efficiency: 4.41 ops/MB"
+    ],
+    "metrics": [
+      {
+        "flow_count": 1,
+        "throughput_ops_per_sec": 46.5,
+        "memory_usage_mb": 62.5,
+        "cpu_percent": 8.08,
+        "success_rate": 1.0,
+        "efficiency_ratio": 46.5,
+        "resource_efficiency": 0.744
+      },
+      {
+        "flow_count": 2,
+        "throughput_ops_per_sec": 90.99999999999999,
+        "memory_usage_mb": 65.0,
+        "cpu_percent": 16.32,
+        "success_rate": 1.0,
+        "efficiency_ratio": 45.49999999999999,
+        "resource_efficiency": 1.3999999999999997
+      },
+      {
+        "flow_count": 4,
+        "throughput_ops_per_sec": 174.0,
+        "memory_usage_mb": 70.0,
+        "cpu_percent": 33.28,
+        "success_rate": 1.0,
+        "efficiency_ratio": 43.5,
+        "resource_efficiency": 2.4857142857142858
+      },
+      {
+        "flow_count": 8,
+        "throughput_ops_per_sec": 315.99999999999994,
+        "memory_usage_mb": 80.0,
+        "cpu_percent": 69.12,
+        "success_rate": 1.0,
+        "efficiency_ratio": 39.49999999999999,
+        "resource_efficiency": 3.9499999999999993
+      },
+      {
+        "flow_count": 10,
+        "throughput_ops_per_sec": 375.0,
+        "memory_usage_mb": 85.0,
+        "cpu_percent": 88.0,
+        "success_rate": 0.96,
+        "efficiency_ratio": 37.5,
+        "resource_efficiency": 4.411764705882353
+      }
+    ]
+  },
+  "resource_intensive": {
+    "test_name": "resource_intensive",
+    "scaling_efficiency": 0.9910969177916485,
+    "max_sustainable_flows": 6,
+    "bottlenecks": [
+      "Thread bottleneck at 3 flows: 1.8x threads",
+      "Thread bottleneck at 6 flows: 1.7x threads",
+      "CPU bottleneck at 10 flows: 95.0% utilization",
+      "Thread bottleneck at 10 flows: 1.5x threads"
+    ],
+    "capacity_recommendations": [
+      "Maximum sustainable concurrent flows: 6",
+      "Peak memory usage: 97.5 MB",
+      "Peak CPU utilization: 95.0%",
+      "Scaling efficiency: 99.1%",
+      "Resource efficiency: 10.00 ops/MB"
+    ],
+    "metrics": [
+      {
+        "flow_count": 1,
+        "throughput_ops_per_sec": 124.5,
+        "memory_usage_mb": 63.75,
+        "cpu_percent": 10.504000000000001,
+        "success_rate": 1.0,
+        "efficiency_ratio": 124.5,
+        "resource_efficiency": 1.9529411764705882
+      },
+      {
+        "flow_count": 3,
+        "throughput_ops_per_sec": 355.5,
+        "memory_usage_mb": 71.25,
+        "cpu_percent": 32.136,
+        "success_rate": 1.0,
+        "efficiency_ratio": 118.5,
+        "resource_efficiency": 4.989473684210527
+      },
+      {
+        "flow_count": 6,
+        "throughput_ops_per_sec": 657.0,
+        "memory_usage_mb": 82.5,
+        "cpu_percent": 66.144,
+        "success_rate": 1.0,
+        "efficiency_ratio": 109.5,
+        "resource_efficiency": 7.963636363636364
+      },
+      {
+        "flow_count": 10,
+        "throughput_ops_per_sec": 974.9999999999999,
+        "memory_usage_mb": 97.5,
+        "cpu_percent": 95,
+        "success_rate": 0.96,
+        "efficiency_ratio": 97.49999999999999,
+        "resource_efficiency": 9.999999999999998
+      }
+    ]
+  },
+  "burst_load": {
+    "test_name": "burst_load",
+    "scaling_efficiency": 0.9900738688827332,
+    "max_sustainable_flows": 8,
+    "bottlenecks": [
+      "Thread bottleneck at 8 flows: 2.5x threads",
+      "CPU bottleneck at 15 flows: 95.0% utilization",
+      "Thread bottleneck at 15 flows: 1.7x threads",
+      "CPU bottleneck at 20 flows: 95.0% utilization"
+    ],
+    "capacity_recommendations": [
+      "Maximum sustainable concurrent flows: 8",
+      "Peak memory usage: 120.0 MB",
+      "Peak CPU utilization: 95.0%",
+      "Scaling efficiency: 99.0%",
+      "Resource efficiency: 10.00 ops/MB"
+    ],
+    "metrics": [
+      {
+        "flow_count": 2,
+        "throughput_ops_per_sec": 152.0,
+        "memory_usage_mb": 66.0,
+        "cpu_percent": 17.952,
+        "success_rate": 1.0,
+        "efficiency_ratio": 76.0,
+        "resource_efficiency": 2.303030303030303
+      },
+      {
+        "flow_count": 8,
+        "throughput_ops_per_sec": 512.0,
+        "memory_usage_mb": 84.0,
+        "cpu_percent": 76.03200000000001,
+        "success_rate": 1.0,
+        "efficiency_ratio": 64.0,
+        "resource_efficiency": 6.095238095238095
+      },
+      {
+        "flow_count": 15,
+        "throughput_ops_per_sec": 900.0,
+        "memory_usage_mb": 105.0,
+        "cpu_percent": 95,
+        "success_rate": 0.86,
+        "efficiency_ratio": 60.0,
+        "resource_efficiency": 8.571428571428571
+      },
+      {
+        "flow_count": 20,
+        "throughput_ops_per_sec": 1200.0,
+        "memory_usage_mb": 120.0,
+        "cpu_percent": 95,
+        "success_rate": 0.8,
+        "efficiency_ratio": 60.0,
+        "resource_efficiency": 10.0
+      }
+    ]
+  },
+  "sustained_load": {
+    "test_name": "sustained_load",
+    "scaling_efficiency": 1.0,
+    "max_sustainable_flows": 5,
+    "bottlenecks": [],
+    "capacity_recommendations": [
+      "Maximum sustainable concurrent flows: 5",
+      "Peak memory usage: 73.8 MB",
+      "Peak CPU utilization: 42.0%",
+      "Scaling efficiency: 100.0%",
+      "Resource efficiency: 10.85 ops/MB"
+    ],
+    "metrics": [
+      {
+        "flow_count": 5,
+        "throughput_ops_per_sec": 800.0,
+        "memory_usage_mb": 73.75,
+        "cpu_percent": 42.0,
+        "success_rate": 1.0,
+        "efficiency_ratio": 160.0,
+        "resource_efficiency": 10.847457627118644
+      },
+      {
+        "flow_count": 5,
+        "throughput_ops_per_sec": 800.0,
+        "memory_usage_mb": 73.75,
+        "cpu_percent": 42.0,
+        "success_rate": 1.0,
+        "efficiency_ratio": 160.0,
+        "resource_efficiency": 10.847457627118644
+      },
+      {
+        "flow_count": 5,
+        "throughput_ops_per_sec": 800.0,
+        "memory_usage_mb": 73.75,
+        "cpu_percent": 42.0,
+        "success_rate": 1.0,
+        "efficiency_ratio": 160.0,
+        "resource_efficiency": 10.847457627118644
+      },
+      {
+        "flow_count": 5,
+        "throughput_ops_per_sec": 800.0,
+        "memory_usage_mb": 73.75,
+        "cpu_percent": 42.0,
+        "success_rate": 1.0,
+        "efficiency_ratio": 160.0,
+        "resource_efficiency": 10.847457627118644
+      }
+    ]
+  }
+}

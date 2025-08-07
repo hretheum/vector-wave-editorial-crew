@@ -1,0 +1,63 @@
+{
+  "flow_id": "research_flow_1754333652",
+  "stage": "routing_decision",
+  "timestamp": "20250804_205419",
+  "state": {
+    "id": "d562fc2f-2660-446d-86f5-32d82b63d0f2",
+    "flow_id": "research_flow_1754333652",
+    "topic_title": "Testing State Persistence in CrewAI Flow",
+    "platform": "Blog",
+    "content_type": "general",
+    "key_themes": [
+      "state management",
+      "persistence",
+      "recovery"
+    ],
+    "editorial_recommendations": "Technical documentation",
+    "current_stage": "content_analysis",
+    "skip_research": false,
+    "research_required": true,
+    "content_analysis": {
+      "content_type": "STANDARD",
+      "viral_score": 0.5,
+      "complexity_level": "intermediate",
+      "recommended_flow_path": "standard_flow",
+      "kb_insights": [
+        "Mock analysis based on keywords"
+      ],
+      "processing_time": 0.1,
+      "target_platform": "Blog",
+      "analysis_confidence": 0.8,
+      "key_themes": [
+        "state management",
+        "persistence",
+        "recovery"
+      ],
+      "audience_indicators": {
+        "technical_level": "medium",
+        "target_roles": [
+          "Developers"
+        ]
+      },
+      "content_structure": {
+        "intro": "Overview",
+        "body": "Technical details",
+        "conclusion": "Summary"
+      },
+      "kb_available": false,
+      "search_strategy_used": "KEYWORD_ANALYSIS",
+      "kb_query_count": 0
+    },
+    "research_result": null,
+    "kb_insights": [],
+    "start_time": 1754333652.568651,
+    "analysis_time": 0.0008540153503417969,
+    "research_time": 0.0,
+    "total_sources": 0
+  },
+  "state_class": "crewai.flow.flow.StateWithId",
+  "metadata": {
+    "routing": "standard_research",
+    "reasoning": "Standard content (0.50 score) - balanced research approach"
+  }
+}

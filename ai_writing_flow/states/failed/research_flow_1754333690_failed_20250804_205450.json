@@ -1,0 +1,30 @@
+{
+  "flow_id": "research_flow_1754333690",
+  "timestamp": "20250804_205450",
+  "stage": "test_stage",
+  "state": {
+    "id": "19574ca6-62ed-4acc-8eca-4d81b72db206",
+    "flow_id": "research_flow_1754333690",
+    "topic_title": "",
+    "platform": "General",
+    "content_type": "general",
+    "key_themes": [],
+    "editorial_recommendations": "",
+    "current_stage": "initialized",
+    "skip_research": false,
+    "research_required": true,
+    "content_analysis": null,
+    "research_result": null,
+    "kb_insights": [],
+    "start_time": 1754333690.5918589,
+    "analysis_time": 0.0,
+    "research_time": 0.0,
+    "total_sources": 0
+  },
+  "error": {
+    "type": "ValueError",
+    "message": "Simulated flow failure",
+    "traceback": null
+  },
+  "failure_time": "2025-08-04T20:54:50.593661"
+}
