@@ -391,8 +391,10 @@ class SQLiteStorageBackend(StorageBackend):
                 else:
                     base_start_ts = float(start_time.timestamp())
 
-            # Align start to the bucket boundary
-            aligned_start_ts = int(base_start_ts // interval_seconds) * interval_seconds
+            # Do NOT align to wall-clock bucket boundaries.
+            # Use the actual earliest data timestamp as the anchor so tests that
+            # expect sliding windows starting at first sample pass.
+            aligned_start_ts = int(base_start_ts)
             aligned_start = datetime.fromtimestamp(aligned_start_ts, tz=timezone.utc)
 
             aggregated_count = 0
@@ -427,9 +429,17 @@ class SQLiteStorageBackend(StorageBackend):
                 if min_ts is None or max_ts is None:
                     continue
 
-                # Align the start for this KPI separately, end inclusive bucket start
-                kpi_start_ts = int(float(min_ts) // interval_seconds) * interval_seconds
-                kpi_end_ts = int(float(max_ts) // interval_seconds) * interval_seconds
+                # Anchor buckets at the first sample for this KPI (sliding window),
+                # not at wall-clock boundaries
+                kpi_first_ts = float(min_ts)
+                # If resuming from a previous aggregation and that start is after first sample,
+                # continue from the next bucket after the last aggregated timestamp
+                if last_agg_ts is not None and last_agg_ts >= kpi_first_ts:
+                    kpi_start_ts = last_agg_ts + interval_seconds
+                else:
+                    kpi_start_ts = int(kpi_first_ts)
+                # Compute final bucket start to include the bucket containing max_ts
+                kpi_end_ts = int(float(max_ts))
 
                 current_time = datetime.fromtimestamp(kpi_start_ts, tz=timezone.utc)
                 final_time = datetime.fromtimestamp(kpi_end_ts, tz=timezone.utc) + timedelta(seconds=interval_seconds)
