@@ -1,0 +1,2 @@
+# Map ubuntu-latest to a compatible image for act
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04
