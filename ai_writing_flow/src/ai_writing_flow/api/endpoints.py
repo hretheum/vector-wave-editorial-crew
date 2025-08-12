@@ -336,11 +336,16 @@ class FlowAPI:
             )
             
             health_status = temp_flow.get_health_status()
-            
+
+            # Ensure we always return a plain dict (tests may mock this method)
+            if not isinstance(health_status, dict):
+                health_status = {}
+
             # Add API-specific health info
             uptime = (datetime.now(timezone.utc) - self._api_stats["start_time"]).total_seconds()
-            
-            health_status.update({
+
+            result: Dict[str, Any] = {
+                **health_status,
                 "version": "2.0.0",
                 "api_statistics": {
                     "total_requests": self._api_stats["total_requests"],
@@ -350,12 +355,16 @@ class FlowAPI:
                         self._api_stats["successful_executions"] / max(self._api_stats["total_requests"], 1) * 100
                     ),
                     "active_flows": len(self._active_flows),
-                    "cached_results": len(self._flow_results)
+                    "cached_results": len(self._flow_results),
                 },
-                "uptime_seconds": uptime
-            })
-            
-            return health_status
+                "uptime_seconds": uptime,
+            }
+
+            # Guarantee a timestamp field for consumers if missing
+            if "timestamp" not in result:
+                result["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+            return result
             
         except Exception as e:
             return {
