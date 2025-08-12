@@ -176,6 +176,9 @@ class FlowAPI:
                 self._api_stats["failed_executions"] += 1
             
             # Build response
+            # Be defensive about optional attributes when mocked in tests
+            agents_attr = getattr(final_state, 'agents_executed', None)
+            agents_count = len(agents_attr) if isinstance(agents_attr, list) else 0
             response_data = {
                 "flow_id": flow_id,
                 "status": "completed" if success else "failed",
@@ -186,7 +189,7 @@ class FlowAPI:
                     "quality_score": getattr(final_state, 'quality_score', 0),
                     "style_score": getattr(final_state, 'style_score', 0),
                     "revision_count": getattr(final_state, 'revision_count', 0),
-                    "agents_executed": len(getattr(final_state, 'agents_executed', [])),
+                    "agents_executed": agents_count,
                     "word_count": len(final_state.final_draft.split()) if final_state.final_draft else 0
                 },
                 "errors": [final_state.error_message] if final_state.error_message else [],
