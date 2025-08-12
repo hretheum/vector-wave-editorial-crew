@@ -351,85 +351,153 @@ class SQLiteStorageBackend(StorageBackend):
             return {"error": str(e)}
     
     def aggregate_raw_metrics(self, interval_seconds: int, start_time: Optional[datetime] = None) -> int:
-        """Create aggregated metrics from raw metrics"""
+        """Create aggregated metrics from raw metrics.
+
+        Improvements:
+        - Align start time to bucket boundary
+        - If no prior aggregation, start from first raw metric timestamp
+        - Limit bucketing to the actual min/max timestamps per KPI to avoid empty iterations
+        - When resuming, continue from the NEXT bucket after the last aggregated bucket
+        """
         try:
-            if not start_time:
-                # Get timestamp of last aggregation for this interval
-                with sqlite3.connect(str(self.db_path)) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        SELECT MAX(timestamp) FROM aggregated_metrics 
-                        WHERE interval_seconds = ?
-                    """, [interval_seconds])
-                    
-                    result = cursor.fetchone()
-                    last_aggregation = result[0] if result[0] else 0
-                    start_time = datetime.fromtimestamp(last_aggregation, tz=timezone.utc)
-            
-            end_time = datetime.now(timezone.utc)
-            
-            # Get all KPI types that have data in the time range
+            # Determine the initial time window for scanning raw metrics
             with sqlite3.connect(str(self.db_path)) as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT DISTINCT kpi_type FROM metrics 
-                    WHERE timestamp BETWEEN ? AND ?
-                """, [start_time.timestamp(), end_time.timestamp()])
-                
-                kpi_types = [row[0] for row in cursor.fetchall()]
-            
+
+                last_agg_ts: Optional[float] = None
+                if start_time is None:
+                    cursor.execute(
+                        """
+                        SELECT MAX(timestamp) FROM aggregated_metrics
+                        WHERE interval_seconds = ?
+                        """,
+                        [interval_seconds],
+                    )
+                    row = cursor.fetchone()
+                    last_agg_ts = row[0] if row and row[0] is not None else None
+
+                # If caller did not provide start_time:
+                if start_time is None:
+                    if last_agg_ts is not None and last_agg_ts > 0:
+                        # Continue from the next bucket after last aggregated
+                        base_start_ts = last_agg_ts + interval_seconds
+                    else:
+                        # No previous aggregation: start from first raw metric
+                        cursor.execute("SELECT MIN(timestamp) FROM metrics")
+                        min_raw = cursor.fetchone()[0]
+                        if min_raw is None:
+                            return 0  # No data at all
+                        base_start_ts = float(min_raw)
+                else:
+                    base_start_ts = float(start_time.timestamp())
+
+            # Align start to the bucket boundary
+            aligned_start_ts = int(base_start_ts // interval_seconds) * interval_seconds
+            aligned_start = datetime.fromtimestamp(aligned_start_ts, tz=timezone.utc)
+
             aggregated_count = 0
-            
+
+            # For each KPI that has data in [aligned_start, now], aggregate within its own min/max bounds
+            end_time = datetime.now(timezone.utc)
+            with sqlite3.connect(str(self.db_path)) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT DISTINCT kpi_type FROM metrics
+                    WHERE timestamp BETWEEN ? AND ?
+                    """,
+                    [aligned_start.timestamp(), end_time.timestamp()],
+                )
+                kpi_types = [row[0] for row in cursor.fetchall()]
+
             for kpi_type_str in kpi_types:
-                # Aggregate in time buckets
-                current_time = start_time
-                
-                while current_time < end_time:
+                # Determine min/max timestamps for this KPI to bound the loop
+                with sqlite3.connect(str(self.db_path)) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        SELECT MIN(timestamp), MAX(timestamp)
+                        FROM metrics
+                        WHERE kpi_type = ? AND timestamp >= ? AND timestamp <= ?
+                        """,
+                        [kpi_type_str, aligned_start.timestamp(), end_time.timestamp()],
+                    )
+                    min_ts, max_ts = cursor.fetchone()
+
+                if min_ts is None or max_ts is None:
+                    continue
+
+                # Align the start for this KPI separately, end inclusive bucket start
+                kpi_start_ts = int(float(min_ts) // interval_seconds) * interval_seconds
+                kpi_end_ts = int(float(max_ts) // interval_seconds) * interval_seconds
+
+                current_time = datetime.fromtimestamp(kpi_start_ts, tz=timezone.utc)
+                final_time = datetime.fromtimestamp(kpi_end_ts, tz=timezone.utc) + timedelta(seconds=interval_seconds)
+
+                while current_time < final_time:
                     bucket_end = current_time + timedelta(seconds=interval_seconds)
-                    
-                    # Get raw metrics for this bucket
+
+                    # Fetch raw values for this bucket
                     with sqlite3.connect(str(self.db_path)) as conn:
                         cursor = conn.cursor()
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             SELECT value FROM metrics
                             WHERE kpi_type = ? AND timestamp >= ? AND timestamp < ?
-                        """, [kpi_type_str, current_time.timestamp(), bucket_end.timestamp()])
-                        
+                            """,
+                            [kpi_type_str, current_time.timestamp(), bucket_end.timestamp()],
+                        )
                         values = [row[0] for row in cursor.fetchall()]
-                    
+
                     if values:
-                        # Calculate aggregations
                         count = len(values)
                         min_val = min(values)
                         max_val = max(values)
                         avg_val = statistics.mean(values)
                         sum_val = sum(values)
-                        
-                        # Calculate percentiles
+
                         sorted_values = sorted(values)
-                        p95_val = sorted_values[int(0.95 * len(sorted_values))] if len(sorted_values) > 1 else sorted_values[0]
-                        p99_val = sorted_values[int(0.99 * len(sorted_values))] if len(sorted_values) > 1 else sorted_values[0]
-                        
-                        # Store aggregated metric
+                        p95_val = (
+                            sorted_values[int(0.95 * len(sorted_values))]
+                            if len(sorted_values) > 1
+                            else sorted_values[0]
+                        )
+                        p99_val = (
+                            sorted_values[int(0.99 * len(sorted_values))]
+                            if len(sorted_values) > 1
+                            else sorted_values[0]
+                        )
+
                         with sqlite3.connect(str(self.db_path)) as conn:
                             cursor = conn.cursor()
-                            cursor.execute("""
-                                INSERT OR REPLACE INTO aggregated_metrics 
-                                (timestamp, kpi_type, interval_seconds, count, min_value, max_value, 
+                            cursor.execute(
+                                """
+                                INSERT INTO aggregated_metrics
+                                (timestamp, kpi_type, interval_seconds, count, min_value, max_value,
                                  avg_value, sum_value, p95_value, p99_value)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, [
-                                current_time.timestamp(), kpi_type_str, interval_seconds,
-                                count, min_val, max_val, avg_val, sum_val, p95_val, p99_val
-                            ])
+                                """,
+                                [
+                                    current_time.timestamp(),
+                                    kpi_type_str,
+                                    interval_seconds,
+                                    count,
+                                    min_val,
+                                    max_val,
+                                    avg_val,
+                                    sum_val,
+                                    p95_val,
+                                    p99_val,
+                                ],
+                            )
                             conn.commit()
-                        
+
                         aggregated_count += 1
-                    
+
                     current_time = bucket_end
-            
+
             return aggregated_count
-            
+
         except Exception as e:
             print(f"Error aggregating metrics: {e}")
             return 0
