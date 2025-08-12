@@ -86,13 +86,17 @@ all: clean container-build container-up test-routing
 act-aiwf:
 	@command -v act >/dev/null 2>&1 || { echo "❌ 'act' not found. Install: brew install act"; exit 1; }
 	@echo "🏃 Running GH Actions test job for ai_writing_flow via act..."
-	@act -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 -j test-python --matrix service:ai_writing_flow
+	@act --container-architecture linux/amd64 --bind \
+	  -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 \
+	  -j test-python --matrix service:ai_writing_flow
 
 # Run GH Actions test job locally (api)
 act-api:
 	@command -v act >/dev/null 2>&1 || { echo "❌ 'act' not found. Install: brew install act"; exit 1; }
 	@echo "🏃 Running GH Actions test job for api via act..."
-	@act -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 -j test-python --matrix service:api
+	@act --container-architecture linux/amd64 --bind \
+	  -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 \
+	  -j test-python --matrix service:api
 
 # Run tests in Docker (Python 3.11), mirrors CI job
 docker-test-aiwf:
