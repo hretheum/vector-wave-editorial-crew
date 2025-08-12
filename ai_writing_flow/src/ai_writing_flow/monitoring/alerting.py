@@ -471,8 +471,18 @@ class AlertManager:
         self._last_alert_times[last_alert_key] = current_time
         self._alert_counts[last_alert_key] = self._alert_counts.get(last_alert_key, 0) + 1
         
-        # Send notifications
-        asyncio.create_task(self._send_notifications(alert))
+        # Send notifications (handle sync/async contexts)
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._send_notifications(alert))
+        except RuntimeError:
+            # No running event loop (e.g., sync test) - run synchronously
+            try:
+                asyncio.run(self._send_notifications(alert))
+            except RuntimeError:
+                # If already inside an event loop but get_running_loop failed for other reasons
+                # fallback: schedule via thread
+                threading.Thread(target=lambda: asyncio.run(self._send_notifications(alert)), daemon=True).start()
     
     def _build_alert_message(self, rule: AlertRule, value: float) -> str:
         """Build alert message"""
