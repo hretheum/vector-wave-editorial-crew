@@ -422,15 +422,14 @@ class AlertManager:
         last_alert_time = self._last_alert_times.get(last_alert_key, 0)
         in_cooldown = (current_time - last_alert_time) < (rule.cooldown_minutes * 60)
         
-        # Create or update alert
-        alert_id = f"{rule.id}_{int(current_time)}"
+        # Create or update alert (single active alert per rule)
+        alert_id = rule.id
         
-        # Check if we have an existing active alert for this rule
-        existing_alert = None
-        for alert in self._active_alerts.values():
-            if alert.rule_id == rule.id and alert.status == AlertStatus.ACTIVE:
-                existing_alert = alert
-                break
+        # Fast path: lookup by stable alert_id
+        existing_alert = self._active_alerts.get(alert_id)
+        if existing_alert and existing_alert.status != AlertStatus.ACTIVE:
+            # Treat non-active alerts as non-existing for update path
+            existing_alert = None
         
         if existing_alert:
             # Update existing alert
