@@ -252,11 +252,12 @@ class FlowMetrics:
         """Record current system resource usage"""
         try:
             # CPU usage
-            cpu_percent = self._process.cpu_percent()
+            # Create a fresh psutil.Process instance so tests can patch psutil.Process
+            cpu_percent = psutil.Process().cpu_percent()
             self._add_metric(KPIType.CPU_USAGE, cpu_percent)
             
             # Memory usage in MB
-            memory_info = self._process.memory_info()
+            memory_info = psutil.Process().memory_info()
             memory_mb = memory_info.rss / 1024 / 1024
             self._add_metric(KPIType.MEMORY_USAGE, memory_mb)
             
