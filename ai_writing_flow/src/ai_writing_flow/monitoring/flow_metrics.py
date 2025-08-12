@@ -374,19 +374,36 @@ class FlowMetrics:
             time_window_seconds = self.config.throughput_window
             
         cutoff_time = time.time() - time_window_seconds
-        
+
         recent_completions = [
             flow for flow in self._completed_flows
             if flow.get("end_time", 0) > cutoff_time
         ]
-        
+
         recent_failures = [
             flow for flow in self._failed_flows
             if flow.get("end_time", 0) > cutoff_time
         ]
-        
-        total_executions = len(recent_completions) + len(recent_failures)
-        return total_executions / time_window_seconds if time_window_seconds > 0 else 0.0
+
+        recent_flows = recent_completions + recent_failures
+        total_executions = len(recent_flows)
+        if total_executions == 0:
+            return 0.0
+
+        # Use the actual span of the observed executions to compute throughput,
+        # rather than dividing by the fixed window size. This aligns the metric
+        # with real execution rate (ops/sec) and matches tests' expectations.
+        end_times = [flow.get("end_time") for flow in recent_flows if flow.get("end_time") is not None]
+        if not end_times:
+            # Fallback to window-based estimate if end times are unavailable
+            return total_executions / time_window_seconds if time_window_seconds > 0 else 0.0
+
+        duration = max(end_times) - min(end_times)
+        # Guard against extremely small or zero durations to avoid huge spikes/division by zero
+        if duration <= 0:
+            duration = float(time_window_seconds)
+
+        return total_executions / duration
     
     def _add_metric(self, kpi_type: KPIType, value: Union[float, int], 
                    stage: str = None, flow_id: str = None, 
