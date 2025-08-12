@@ -9,7 +9,7 @@ import time
 import structlog
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+from crewai.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
 
 from ...models import (
     ContentAnalysisResult,

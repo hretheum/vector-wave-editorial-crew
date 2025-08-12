@@ -10,7 +10,7 @@ import structlog
 from typing import Dict, Any, Optional, List, Callable
 from enum import Enum
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+from crewai.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
 
 from ...models import WritingFlowState
 from ..flows.research_flow import ResearchFlow
