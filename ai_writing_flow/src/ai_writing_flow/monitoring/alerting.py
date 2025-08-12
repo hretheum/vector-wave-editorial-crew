@@ -434,8 +434,10 @@ class AlertManager:
         
         if existing_alert:
             # Update existing alert
-            existing_alert.value = value
-            existing_alert.updated_at = datetime.now(timezone.utc)
+            if not in_cooldown:
+                # Only update value/timestamp when not in cooldown
+                existing_alert.value = value
+                existing_alert.updated_at = datetime.now(timezone.utc)
             # Increment escalation count on every repeated trigger (even during cooldown)
             existing_alert.escalation_count += 1
             
