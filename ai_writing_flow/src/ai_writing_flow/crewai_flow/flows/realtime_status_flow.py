@@ -11,7 +11,22 @@ import structlog
 from typing import Dict, Any, Optional, List, Callable
 from enum import Enum
 from pydantic import BaseModel, Field
-from crewai.flow import Flow, start as flow_start, listen as flow_listen
+try:
+    from crewai.flow import Flow, start as flow_start, listen as flow_listen
+except Exception:
+    try:
+        from crewai import Flow  # type: ignore
+    except Exception:
+        class Flow:  # type: ignore
+            pass
+    def flow_start(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+    def flow_listen(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
 
 from ...utils.ui_bridge_v2 import UIBridgeV2
 from ..persistence import get_state_manager

@@ -10,7 +10,26 @@ import asyncio
 import structlog
 from typing import Dict, Any, Optional, List, Callable
 from pydantic import BaseModel, Field
-from crewai.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+try:
+    from crewai.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+except Exception:
+    try:
+        from crewai import Flow  # type: ignore
+    except Exception:
+        class Flow:  # type: ignore
+            pass
+    def flow_start(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+    def flow_listen(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+    def flow_router(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
 
 from .human_approval_flow import HumanApprovalFlow, ReviewDecision, HumanReviewPoint
 from .feedback_processing_flow import FeedbackProcessingFlow, FeedbackAction

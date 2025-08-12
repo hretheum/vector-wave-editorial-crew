@@ -18,7 +18,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from crewai import Flow, Agent, Task, Crew
-from crewai.flow import start, listen, router
+try:
+    from crewai.flow import start, listen, router
+except Exception:
+    # Fallback stubs when CrewAI Flow API is unavailable in environment
+    def start(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+
+    def listen(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+
+    def router(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
 from pydantic import BaseModel, Field
 
 # Phase 1 Infrastructure imports
