@@ -36,20 +36,37 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd ${{ matrix.service }}
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-asyncio
+        if [ "${{ matrix.service }}" = "api" ]; then
+          # Root-level api tests use repo root requirements
+          python -m pip install --upgrade pip
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov pytest-asyncio
+        else
+          cd ${{ matrix.service }}
+          python -m pip install --upgrade pip
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov pytest-asyncio
+        fi
     
     - name: Run tests
       run: |
-        cd ${{ matrix.service }}
-        python -m pytest --cov=src --cov-report=xml --cov-report=term
+        if [ "${{ matrix.service }}" = "api" ]; then
+          # API tests live under publishing-orchestrator or project root
+          TEST_TARGET="publishing-orchestrator"
+          if [ -d "$TEST_TARGET" ]; then cd "$TEST_TARGET"; fi
+          python -m pytest --cov=. --cov-report=xml --cov-report=term
+        else
+          if [ -d "${{ matrix.service }}" ]; then cd "${{ matrix.service }}"; fi
+          python -m pytest --cov=. --cov-report=xml --cov-report=term
+        fi
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./${{ matrix.service }}/coverage.xml
+        file: |
+          ${{ matrix.service == 'api' && (hashFiles('publishing-orchestrator/coverage.xml') != '' && 'publishing-orchestrator/coverage.xml' || 'coverage.xml') || format('{0}/coverage.xml', matrix.service) }}
         flags: ${{ matrix.service }}
         fail_ci_if_error: false
 
