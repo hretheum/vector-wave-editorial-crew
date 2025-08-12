@@ -118,7 +118,7 @@ class ResearchFlow(Flow[ResearchFlowState]):
             recovered=hasattr(self, '_recovered_from_checkpoint')
         )
     
-    @start()
+    @flow_start()
     def analyze_content(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Analyze content and determine research needs

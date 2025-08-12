@@ -11,7 +11,7 @@ import time
 import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start, listen
+from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen
 
 from ...models import (
     ContentAnalysisResult,
@@ -109,7 +109,7 @@ class TechnicalContentFlow(Flow[TechnicalFlowState]):
             config=self.config
         )
     
-    @start()
+    @flow_start()
     def deep_technical_research(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Conduct deep technical research

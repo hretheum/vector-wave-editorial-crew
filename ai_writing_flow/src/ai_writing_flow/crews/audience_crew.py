@@ -14,6 +14,43 @@ import time
 import asyncio
 
 from ..models import AudienceAlignment
+
+# Backwards-compatibility exports for tests expecting these symbols
+def calculate_topic_fit_score(topic: str, audience_key: str, platform: str = "LinkedIn") -> float:
+    """Compatibility wrapper: compute topic fit score using module logic."""
+    audience = VECTOR_WAVE_AUDIENCES.get(audience_key)
+    if not audience:
+        return 0.5
+    score = 0.5
+    topic_lower = topic.lower()
+    for pain_point in audience["pain_points"]:
+        if any(word in topic_lower for word in pain_point.split()):
+            score += 0.1
+    for value in audience["values"]:
+        if any(word in topic_lower for word in value.split()):
+            score += 0.1
+    if platform.lower() == "twitter" and audience_key in ["technical_founder", "senior_engineer"]:
+        score += 0.1
+    elif platform.lower() == "linkedin" and audience_key == "decision_maker":
+        score += 0.1
+    return min(score, 1.0)
+
+def generate_key_message(topic: str, audience_key: str, platform: str = "LinkedIn") -> str:
+    """Compatibility wrapper: generate key message for audience/platform."""
+    messages = {
+        "technical_founder": f"How {topic} drives 3x productivity without adding complexity",
+        "senior_engineer": f"Deep dive: Implementing {topic} with clean architecture patterns",
+        "decision_maker": f"Strategic guide: Why {topic} is your competitive advantage in 2024",
+        "skeptical_learner": f"No BS analysis: What {topic} actually delivers (with data)",
+    }
+    platform_adjustments = {
+        "twitter": " (thread format with clear hooks)",
+        "linkedin": " (professional tone with industry insights)",
+        "newsletter": " (in-depth with actionable takeaways)",
+    }
+    base = messages.get(audience_key, f"Exploring {topic}")
+    adj = platform_adjustments.get(platform.lower(), "")
+    return f"{base}{adj}"
 from ..clients.editorial_client import EditorialServiceClient
 from ..clients.editorial_utils import aggregate_rules
 
