@@ -168,6 +168,7 @@ class FlowMetrics:
         """Record the start of a flow execution"""
         with self._lock:
             self._active_flows[flow_id] = {
+                "flow_id": flow_id,
                 "start_time": time.time(),
                 "current_stage": stage,
                 "stages_completed": [],
@@ -223,6 +224,8 @@ class FlowMetrics:
                 return
             
             flow_data = self._active_flows.pop(flow_id)
+            # Ensure flow_id is present in persisted record
+            flow_data["flow_id"] = flow_data.get("flow_id", flow_id)
             flow_data["end_time"] = time.time()
             flow_data["total_time"] = flow_data["end_time"] - flow_data["start_time"]
             flow_data["success"] = success
