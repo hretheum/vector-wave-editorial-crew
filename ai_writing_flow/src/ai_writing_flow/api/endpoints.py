@@ -270,10 +270,30 @@ class FlowAPI:
             if hasattr(flow, 'ui_bridge') and flow.ui_bridge:
                 session_info = flow.ui_bridge.get_session_info(flow_id)
                 if session_info:
+                    # Robust handling of start_time which may be a datetime-like object with isoformat(),
+                    # a plain string, a dict exposing isoformat, or a Mock in tests.
+                    start_time_value = None
+                    raw_start_time = session_info.get("start_time")
+                    if isinstance(raw_start_time, str):
+                        start_time_value = raw_start_time
+                    else:
+                        iso_attr = getattr(raw_start_time, "isoformat", None) if raw_start_time is not None else None
+                        if callable(iso_attr):
+                            try:
+                                start_time_value = iso_attr()
+                            except Exception:
+                                start_time_value = None
+                        elif isinstance(raw_start_time, dict):
+                            iso_callable = raw_start_time.get("isoformat")
+                            if callable(iso_callable):
+                                try:
+                                    start_time_value = iso_callable()
+                                except Exception:
+                                    start_time_value = None
                     progress_info = {
                         "current_stage": session_info.get("current_stage", "unknown"),
                         "progress_percent": None,  # Would calculate from stage progress
-                        "start_time": session_info.get("start_time", {}).get("isoformat", lambda: None)(),
+                        "start_time": start_time_value,
                         "metrics": session_info.get("metrics", {})
                     }
             
