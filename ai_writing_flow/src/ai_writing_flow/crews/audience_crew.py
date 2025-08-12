@@ -196,6 +196,30 @@ def calibrate_tone(primary_audience: str) -> str:
     return result
 
 
+def calculate_topic_fit_score(topic: str, audience_key: str, platform: str = "LinkedIn") -> float:
+    # Kept for legacy tests; delegate to current module logic
+    return generate_intelligent_scores(topic, platform).get(audience_key, 0.5)
+
+
+def generate_key_message(topic: str, audience_key: str, platform: str = "LinkedIn") -> str:
+    # Minimal legacy-compatible message generator
+    base = f"Exploring {topic}"
+    if audience_key == "technical_founder":
+        base = f"How {topic} drives 3x productivity without adding complexity"
+    elif audience_key == "senior_engineer":
+        base = f"Deep dive: Implementing {topic} with clean architecture patterns"
+    elif audience_key == "decision_maker":
+        base = f"Strategic guide: Why {topic} is your competitive advantage in 2024"
+    elif audience_key == "skeptical_learner":
+        base = f"No BS analysis: What {topic} actually delivers (with data)"
+    suffix = {
+        "twitter": " (thread format with clear hooks)",
+        "linkedin": " (professional tone with industry insights)",
+        "newsletter": " (in-depth with actionable takeaways)",
+    }.get(platform.lower(), "")
+    return base + suffix
+
+
 class AudienceCrew:
     """
     Crew responsible for audience alignment and messaging calibration

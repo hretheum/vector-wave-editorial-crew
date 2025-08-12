@@ -9,7 +9,16 @@ import time
 import structlog
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+try:
+    from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+except Exception:  # pragma: no cover - legacy compat shim for tests
+    from ..compat_shims import Flow as Flow  # type: ignore
+    from ..compat_shims import start as flow_start  # type: ignore
+    from ..compat_shims import flow_listen as flow_listen  # type: ignore
+    def flow_router(*args, **kwargs):  # type: ignore
+        def _decorator(func):
+            return func
+        return _decorator
 
 from ...models import (
     ContentAnalysisResult,
