@@ -78,3 +78,29 @@ test-complete-flow:
 		-d '{"title": "Future of Work", "content_ownership": "EXTERNAL", "platform": "LinkedIn"}' | jq .
 
 all: clean container-build container-up test-routing
+
+# --- Local CI parity helpers ---
+.PHONY: act-aiwf act-api docker-test-aiwf docker-test-api
+
+# Run GH Actions test job locally (ai_writing_flow)
+act-aiwf:
+	@command -v act >/dev/null 2>&1 || { echo "❌ 'act' not found. Install: brew install act"; exit 1; }
+	@echo "🏃 Running GH Actions test job for ai_writing_flow via act..."
+	@act --container-architecture linux/amd64 --bind \
+	  -j test-python --matrix service:ai_writing_flow
+
+# Run GH Actions test job locally (api)
+act-api:
+	@command -v act >/dev/null 2>&1 || { echo "❌ 'act' not found. Install: brew install act"; exit 1; }
+	@echo "🏃 Running GH Actions test job for api via act..."
+	@act --container-architecture linux/amd64 --bind \
+	  -j test-python --matrix service:api
+
+# Run tests in Docker (Python 3.11), mirrors CI job
+docker-test-aiwf:
+	@echo "🐳 Running ai_writing_flow tests in Docker (Python 3.11)..."
+	@SERVICE=ai_writing_flow docker compose -f docker-compose.test.yml run --rm test-python-3.11
+
+docker-test-api:
+	@echo "🐳 Running api tests in Docker (Python 3.11)..."
+	@SERVICE=api docker compose -f docker-compose.test.yml run --rm test-python-3.11

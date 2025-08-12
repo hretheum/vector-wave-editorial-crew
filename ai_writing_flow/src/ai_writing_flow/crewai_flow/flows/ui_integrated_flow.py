@@ -10,7 +10,12 @@ import asyncio
 import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen
+try:
+    from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen
+except Exception:  # pragma: no cover
+    from ..compat_shims import Flow as Flow  # type: ignore
+    from ..compat_shims import start as flow_start  # type: ignore
+    from ..compat_shims import flow_listen as flow_listen  # type: ignore
 
 from ...utils.ui_bridge_v2 import UIBridgeV2, create_ui_bridge_v2
 from ...models import WritingFlowState, HumanFeedbackDecision

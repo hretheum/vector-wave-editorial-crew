@@ -75,6 +75,19 @@ VECTOR_WAVE_AUDIENCES = {
     }
 }
 
+@tool("Get Audience List")
+def get_audience_list() -> str:
+    """Get list of all target audiences with their characteristics"""
+    audience_info: List[str] = []
+    for key, audience in VECTOR_WAVE_AUDIENCES.items():
+        info = f"{key}: {audience['description']}"
+        info += f"\n  Values: {', '.join(audience['values'])}"
+        info += f"\n  Pain points: {', '.join(audience['pain_points'])}"
+        info += f"\n  Preferred depth: {audience['preferred_depth']}"
+        audience_info.append(info)
+
+    return "Target audiences:\n" + "\n\n".join(audience_info)
+
 @tool("Analyze All Audiences")
 def analyze_all_audiences(topic: str, platform: str = "LinkedIn") -> str:
     """Analyze topic fit for ALL target audiences and return complete analysis"""
@@ -181,6 +194,30 @@ def calibrate_tone(primary_audience: str) -> str:
     result += "\n\n=== TONE CALIBRATION COMPLETE - PROVIDE FINAL ANSWER NOW ==="
     
     return result
+
+
+def calculate_topic_fit_score(topic: str, audience_key: str, platform: str = "LinkedIn") -> float:
+    # Kept for legacy tests; delegate to current module logic
+    return generate_intelligent_scores(topic, platform).get(audience_key, 0.5)
+
+
+def generate_key_message(topic: str, audience_key: str, platform: str = "LinkedIn") -> str:
+    # Minimal legacy-compatible message generator
+    base = f"Exploring {topic}"
+    if audience_key == "technical_founder":
+        base = f"How {topic} drives 3x productivity without adding complexity"
+    elif audience_key == "senior_engineer":
+        base = f"Deep dive: Implementing {topic} with clean architecture patterns"
+    elif audience_key == "decision_maker":
+        base = f"Strategic guide: Why {topic} is your competitive advantage in 2024"
+    elif audience_key == "skeptical_learner":
+        base = f"No BS analysis: What {topic} actually delivers (with data)"
+    suffix = {
+        "twitter": " (thread format with clear hooks)",
+        "linkedin": " (professional tone with industry insights)",
+        "newsletter": " (in-depth with actionable takeaways)",
+    }.get(platform.lower(), "")
+    return base + suffix
 
 
 class AudienceCrew:

@@ -1,0 +1,2 @@
+# Map ubuntu-latest to a full image (includes Node, Python, etc.)
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-22.04

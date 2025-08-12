@@ -11,7 +11,12 @@ import time
 import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start, listen
+try:
+    from crewai.flow.flow import Flow, start, listen
+except Exception:  # pragma: no cover - legacy compat shim
+    from ..compat_shims import Flow as Flow  # type: ignore
+    from ..compat_shims import start as start  # type: ignore
+    from ..compat_shims import flow_listen as listen  # type: ignore
 
 from ...models import (
     ContentAnalysisResult,

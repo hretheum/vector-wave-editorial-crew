@@ -1434,4 +1434,3 @@ Based on the stress test results, the following recommendations are made:
 if __name__ == "__main__":
     # Run stress tests directly
     pytest.main([__file__, "-v", "-s", "--tb=short", "-m", "performance"])
-EOF < /dev/null

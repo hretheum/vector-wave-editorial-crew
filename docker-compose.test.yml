@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  test-python-3.11:
+    image: python:3.11-slim
+    working_dir: /ws
+    volumes:
+      - ./:/ws
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    command: bash -lc "cd ${SERVICE} && \
+                      python -m pip install --upgrade pip && \
+                      pip install -r requirements.txt && \
+                      pip install pytest pytest-cov pytest-asyncio && \
+                      python -m pytest --cov=src --cov-report=term ${TESTARGS}"

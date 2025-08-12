@@ -79,7 +79,8 @@ def test_kb_tools_configuration():
     try:
         print("\n📋 Testing list_crewai_topics...")
         topics = list_crewai_topics.run()
-        print(f"✅ Topics retrieved: {len(topics.split('\\n')) if topics else 0} categories")
+        topics_count = len(topics.splitlines()) if topics else 0
+        print(f"✅ Topics retrieved: {topics_count} categories")
     except Exception as e:
         print(f"⚠️  list_crewai_topics failed: {e}")
     
