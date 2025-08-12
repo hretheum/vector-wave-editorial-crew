@@ -16,7 +16,9 @@ except Exception:
         from crewai import Flow  # type: ignore
     except Exception:
         class Flow:  # type: ignore
-            pass
+            # Allow generic subscripting like Flow[State]
+            def __class_getitem__(cls, item):
+                return cls
     def flow_start(*args, **kwargs):
         def _decorator(func):
             return func
