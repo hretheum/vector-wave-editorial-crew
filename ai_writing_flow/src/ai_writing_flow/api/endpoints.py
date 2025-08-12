@@ -208,8 +208,27 @@ class FlowAPI:
         except Exception as e:
             self._api_stats["failed_executions"] += 1
             
-            error_response = {
-                "flow_id": flow_id if 'flow_id' in locals() else "unknown",
+            # If flow was already started and we have a final_state, treat as a failed execution
+            flow_id_value = flow_id if 'flow_id' in locals() else "unknown"
+            if 'final_state' in locals():
+                try:
+                    fs_error = getattr(final_state, 'error_message', None)
+                except Exception:
+                    fs_error = None
+                error_list = [msg for msg in [fs_error, str(e)] if msg]
+                return {
+                    "flow_id": flow_id_value,
+                    "status": "failed",
+                    "message": f"Flow failed: {fs_error or str(e)}",
+                    "final_draft": None,
+                    "metrics": {},
+                    "errors": error_list + [traceback.format_exc()],
+                    "execution_time": 0.0
+                }
+            
+            # Otherwise it's an API error before the flow started
+            return {
+                "flow_id": flow_id_value,
                 "status": "error",
                 "message": f"API execution error: {str(e)}",
                 "final_draft": None,
@@ -217,8 +236,6 @@ class FlowAPI:
                 "errors": [str(e), traceback.format_exc()],
                 "execution_time": 0.0
             }
-            
-            return error_response
     
     async def get_flow_status(self, flow_id: str) -> Dict[str, Any]:
         """
