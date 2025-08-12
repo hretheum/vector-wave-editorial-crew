@@ -36,20 +36,33 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd ${{ matrix.service }}
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Install common requirements from repo root
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install pytest pytest-cov pytest-asyncio
     
     - name: Run tests
       run: |
-        cd ${{ matrix.service }}
-        python -m pytest --cov=src --cov-report=xml --cov-report=term
+        # Determine test path per service
+        SERVICE_PATH="${{ matrix.service }}"
+        if [ "$SERVICE_PATH" = "api" ]; then
+          # API tests live under publishing-orchestrator or project root
+          TEST_TARGET="publishing-orchestrator"
+          if [ -d "$TEST_TARGET" ]; then cd "$TEST_TARGET"; fi
+          python -m pytest --cov=. --cov-report=xml --cov-report=term
+        else
+          # ai_writing_flow tests
+          if [ -d "ai_writing_flow" ]; then cd ai_writing_flow; fi
+          python -m pytest --cov=. --cov-report=xml --cov-report=term
+        fi
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./${{ matrix.service }}/coverage.xml
+        files: |
+          ./publishing-orchestrator/coverage.xml
+          ./ai_writing_flow/coverage.xml
         flags: ${{ matrix.service }}
         fail_ci_if_error: false
 
