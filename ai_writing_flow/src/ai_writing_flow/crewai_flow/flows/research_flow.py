@@ -10,27 +10,10 @@ import structlog
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 try:
-    from crewai.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow  # Use real Flow when available
 except Exception:
-    try:
-        from crewai import Flow  # type: ignore
-    except Exception:
-        class Flow:  # type: ignore
-            # Allow generic subscripting like Flow[State]
-            def __class_getitem__(cls, item):
-                return cls
-    def flow_start(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
-    def flow_listen(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
-    def flow_router(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
+    BaseFlow = object  # Fall back to simple object base
 
 from ...models import (
     ContentAnalysisResult,
@@ -77,7 +60,7 @@ class ResearchFlowState(BaseModel):
     total_sources: int = 0
 
 
-class ResearchFlow(Flow[ResearchFlowState]):
+class ResearchFlow(BaseFlow):
     """
     Research Flow with conditional routing based on content type.
     
@@ -103,7 +86,13 @@ class ResearchFlow(Flow[ResearchFlowState]):
                 - research_depth: Research depth level
                 - min_sources: Minimum sources for research
         """
-        super().__init__()
+        # Ensure base class init (if any)
+        try:
+            super().__init__()  # type: ignore[misc]
+        except Exception:
+            pass
+        # Provide state explicitly (decouple from CrewAI Flow runtime)
+        self.state = ResearchFlowState()
         self.config = config or {}
         
         # Default configuration
@@ -139,7 +128,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             recovered=hasattr(self, '_recovered_from_checkpoint')
         )
     
-    @flow_start()
     def analyze_content(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Analyze content and determine research needs
@@ -228,7 +216,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             )
             raise
     
-    @flow_router(analyze_content)
     def route_by_content_type(self, analysis_output: Dict[str, Any]) -> str:
         """
         Router: Determine research path based on content type with KB enhancement
