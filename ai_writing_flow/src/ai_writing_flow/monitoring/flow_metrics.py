@@ -124,6 +124,9 @@ class FlowMetrics:
         self._active_flows: Dict[str, Dict[str, Any]] = {}
         self._completed_flows: List[Dict[str, Any]] = []
         self._failed_flows: List[Dict[str, Any]] = []
+        # Cumulative counters (not affected by history cleanup)
+        self._total_completed_flows: int = 0
+        self._total_failed_flows: int = 0
         
         # Performance tracking
         self._execution_times: List[float] = []
@@ -233,11 +236,13 @@ class FlowMetrics:
             
             if success:
                 self._completed_flows.append(flow_data)
+                self._total_completed_flows += 1
                 self._add_metric(KPIType.COMPLETION_RATE, 1.0, final_stage, flow_id)
                 # Record error rate as 0 for successful flow to ensure proper averaging
                 self._add_metric(KPIType.ERROR_RATE, 0.0, final_stage, flow_id)
             else:
                 self._failed_flows.append(flow_data)
+                self._total_failed_flows += 1
                 self._add_metric(KPIType.COMPLETION_RATE, 0.0, final_stage, flow_id)
                 self._add_metric(KPIType.ERROR_RATE, 1.0, final_stage, flow_id)
             
@@ -322,7 +327,7 @@ class FlowMetrics:
                 throughput=throughput,
                 error_rate=error_rate,
                 active_flows=len(self._active_flows),
-                total_executions=len(self._completed_flows) + len(self._failed_flows),
+                total_executions=self._total_completed_flows + self._total_failed_flows,
                 flow_efficiency=flow_efficiency,
                 resource_efficiency=resource_efficiency,
                 avg_stage_duration=avg_stage_duration,
@@ -727,6 +732,8 @@ class FlowMetrics:
             self._retry_counts.clear()
             self._error_counts.clear()
             self._stage_durations.clear()
+            self._total_completed_flows = 0
+            self._total_failed_flows = 0
             
             self._cached_kpis = None
             self._last_kpi_calculation = 0
