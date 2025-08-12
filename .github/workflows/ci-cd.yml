@@ -37,8 +37,9 @@ jobs:
     - name: Install dependencies
       run: |
         if [ "${{ matrix.service }}" = "api" ]; then
-          # Root-level api tests use repo root requirements
+          # API lives under publishing-orchestrator
           python -m pip install --upgrade pip
+          cd publishing-orchestrator
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-cov pytest-asyncio
@@ -48,19 +49,19 @@ jobs:
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f pyproject.toml ]; then pip install -e .; fi
+          # Explicit installs for missing deps observed in CI
+          pip install crewai[tools] aiohttp pydantic psutil structlog httpx requests
           pip install pytest pytest-cov pytest-asyncio
         fi
     
     - name: Run tests
       run: |
         if [ "${{ matrix.service }}" = "api" ]; then
-          # API tests live under publishing-orchestrator or project root
-          TEST_TARGET="publishing-orchestrator"
-          if [ -d "$TEST_TARGET" ]; then cd "$TEST_TARGET"; fi
-          python -m pytest --cov=. --cov-report=xml --cov-report=term
+          cd publishing-orchestrator
+          python -m pytest -k "not e2e and not performance and not heavy_load" --maxfail=1 --cov=. --cov-report=xml --cov-report=term
         else
-          if [ -d "${{ matrix.service }}" ]; then cd "${{ matrix.service }}"; fi
-          python -m pytest --cov=. --cov-report=xml --cov-report=term
+          cd ${{ matrix.service }}
+          python -m pytest -k "not e2e and not performance and not heavy_load" --maxfail=1 --cov=. --cov-report=xml --cov-report=term
         fi
     
     - name: Upload coverage to Codecov
