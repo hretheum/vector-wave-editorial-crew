@@ -11,22 +11,10 @@ import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 try:
-    from crewai.flow import Flow, start as flow_start, listen as flow_listen
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
 except Exception:
-    try:
-        from crewai import Flow  # type: ignore
-    except Exception:
-        class Flow:  # type: ignore
-            def __class_getitem__(cls, item):
-                return cls
-    def flow_start(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
-    def flow_listen(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
+    BaseFlow = object
 
 from ...utils.ui_bridge_v2 import UIBridgeV2, create_ui_bridge_v2
 from ...models import WritingFlowState, HumanFeedbackDecision
@@ -67,7 +55,7 @@ class UIIntegratedFlowState(BaseModel):
     ui_response_times: List[float] = Field(default_factory=list)
 
 
-class UIIntegratedFlow(Flow[UIIntegratedFlowState]):
+class UIIntegratedFlow(BaseFlow):
     """
     CrewAI Flow integrated with UIBridge V2.
     
@@ -90,6 +78,11 @@ class UIIntegratedFlow(Flow[UIIntegratedFlowState]):
                 - auto_mode: Auto-approve for testing
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = UIIntegratedFlowState()
         self.config = config or {}
         
         # Initialize or use provided UI Bridge
@@ -126,7 +119,6 @@ class UIIntegratedFlow(Flow[UIIntegratedFlowState]):
             auto_mode=self.auto_mode
         )
     
-    @flow_start()
     def start_ui_flow(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Start flow with UI session tracking
@@ -166,7 +158,6 @@ class UIIntegratedFlow(Flow[UIIntegratedFlowState]):
             "ui_ready": True
         }
     
-    @flow_listen(start_ui_flow)
     def process_with_ui_updates(self, session_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process flow with UI progress updates

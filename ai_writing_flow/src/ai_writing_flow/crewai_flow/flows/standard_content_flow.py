@@ -10,22 +10,10 @@ import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 try:
-    from crewai.flow import Flow, start as flow_start, listen as flow_listen
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
 except Exception:
-    try:
-        from crewai import Flow  # type: ignore
-    except Exception:
-        class Flow:  # type: ignore
-            def __class_getitem__(cls, item):
-                return cls
-    def flow_start(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
-    def flow_listen(*args, **kwargs):
-        def _decorator(func):
-            return func
-        return _decorator
+    BaseFlow = object
 
 from ...models import (
     ContentAnalysisResult,
@@ -74,7 +62,7 @@ class StandardFlowState(BaseModel):
     quality_time: float = 0.0
 
 
-class StandardContentFlow(Flow[StandardFlowState]):
+class StandardContentFlow(BaseFlow):
     """
     Standard Content Flow following proven editorial process:
     
@@ -97,6 +85,11 @@ class StandardContentFlow(Flow[StandardFlowState]):
                 - quality_threshold: Minimum quality score
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = StandardFlowState()
         self.config = config or {}
         
         # Default configuration
@@ -118,7 +111,6 @@ class StandardContentFlow(Flow[StandardFlowState]):
             config=self.config
         )
     
-    @flow_start()
     def comprehensive_research(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Conduct comprehensive research
@@ -264,7 +256,6 @@ class StandardContentFlow(Flow[StandardFlowState]):
             )
             raise
     
-    @flow_listen(comprehensive_research)
     def audience_analysis(self, research_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze target audience based on research
@@ -336,7 +327,6 @@ class StandardContentFlow(Flow[StandardFlowState]):
             )
             raise
     
-    @flow_listen(audience_analysis)
     def structured_writing(self, audience_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create structured content based on audience needs
@@ -407,7 +397,6 @@ class StandardContentFlow(Flow[StandardFlowState]):
             )
             raise
     
-    @flow_listen(structured_writing)
     def style_optimization(self, writing_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Optimize content style for target audience
@@ -473,7 +462,6 @@ class StandardContentFlow(Flow[StandardFlowState]):
             )
             raise
     
-    @flow_listen(style_optimization)
     def quality_review_final(self, style_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Final quality review and polish

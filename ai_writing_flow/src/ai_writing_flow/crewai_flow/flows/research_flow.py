@@ -501,7 +501,6 @@ class ResearchFlow(BaseFlow):
         # Return guidance only if we have a recommendation
         return guidance if guidance["recommendation"] else None
     
-    @flow_listen("deep_research")
     def conduct_deep_research(self) -> Dict[str, Any]:
         """
         Deep research for technical content
@@ -617,7 +616,6 @@ class ResearchFlow(BaseFlow):
             )
             raise
     
-    @flow_listen("quick_research")
     def conduct_quick_research(self) -> Dict[str, Any]:
         """
         Quick research for viral content
@@ -683,7 +681,6 @@ class ResearchFlow(BaseFlow):
             "research_type": "quick"
         }
     
-    @flow_listen("standard_research")
     def conduct_standard_research(self) -> Dict[str, Any]:
         """
         Standard research for balanced content
@@ -749,7 +746,6 @@ class ResearchFlow(BaseFlow):
             "research_type": "standard"
         }
     
-    @flow_listen("skip_research")
     def skip_research_process(self) -> Dict[str, Any]:
         """
         Skip research for low-viability content
