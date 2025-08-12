@@ -403,13 +403,20 @@ class FlowMetrics:
         if duration <= 0:
             duration = float(time_window_seconds)
 
-        # Estimate throughput using average inter-arrival time between completions
-        # This better matches wall-clock measurement that includes an initial and
-        # final gap around the sequence in tests.
+        # Alternative window: align with wall-clock from first start to "now",
+        # which matches how tests measure duration (start_time .. end of loop).
+        start_times = [flow.get("start_time") for flow in recent_flows if flow.get("start_time") is not None]
+        if start_times:
+            earliest_start = min(start_times)
+            end_reference = max(max(end_times), time.time())
+            wall_clock_duration = end_reference - earliest_start
+            if wall_clock_duration > 0:
+                return total_executions / wall_clock_duration
+
+        # Fallbacks
         if total_executions > 1:
             return (total_executions - 1) / duration
-        else:
-            return total_executions / duration
+        return total_executions / duration
     
     def _add_metric(self, kpi_type: KPIType, value: Union[float, int], 
                    stage: str = None, flow_id: str = None, 

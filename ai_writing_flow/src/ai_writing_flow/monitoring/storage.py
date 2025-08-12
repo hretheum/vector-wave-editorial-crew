@@ -392,7 +392,7 @@ class SQLiteStorageBackend(StorageBackend):
                         cursor = conn.cursor()
                         cursor.execute("""
                             SELECT value FROM metrics
-                            WHERE kpi_type = ? AND timestamp BETWEEN ? AND ?
+                            WHERE kpi_type = ? AND timestamp >= ? AND timestamp < ?
                         """, [kpi_type_str, current_time.timestamp(), bucket_end.timestamp()])
                         
                         values = [row[0] for row in cursor.fetchall()]
