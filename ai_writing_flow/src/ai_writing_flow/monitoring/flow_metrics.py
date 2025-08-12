@@ -231,6 +231,8 @@ class FlowMetrics:
             if success:
                 self._completed_flows.append(flow_data)
                 self._add_metric(KPIType.COMPLETION_RATE, 1.0, final_stage, flow_id)
+                # Record error rate as 0 for successful flow to ensure proper averaging
+                self._add_metric(KPIType.ERROR_RATE, 0.0, final_stage, flow_id)
             else:
                 self._failed_flows.append(flow_data)
                 self._add_metric(KPIType.COMPLETION_RATE, 0.0, final_stage, flow_id)
