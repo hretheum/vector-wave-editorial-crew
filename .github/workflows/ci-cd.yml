@@ -42,7 +42,7 @@ jobs:
           cd publishing-orchestrator
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest pytest-cov pytest-asyncio pytest-timeout
         else
           cd ${{ matrix.service }}
           python -m pip install --upgrade pip
@@ -51,7 +51,7 @@ jobs:
           if [ -f pyproject.toml ]; then pip install -e .; fi
           # Explicit installs for missing deps observed in CI
           pip install crewai[tools] aiohttp pydantic psutil structlog httpx requests
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest pytest-cov pytest-asyncio pytest-timeout
         fi
     
     - name: Run tests
