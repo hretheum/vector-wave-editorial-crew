@@ -75,6 +75,19 @@ VECTOR_WAVE_AUDIENCES = {
     }
 }
 
+@tool("Get Audience List")
+def get_audience_list() -> str:
+    """Get list of all target audiences with their characteristics"""
+    audience_info: List[str] = []
+    for key, audience in VECTOR_WAVE_AUDIENCES.items():
+        info = f"{key}: {audience['description']}"
+        info += f"\n  Values: {', '.join(audience['values'])}"
+        info += f"\n  Pain points: {', '.join(audience['pain_points'])}"
+        info += f"\n  Preferred depth: {audience['preferred_depth']}"
+        audience_info.append(info)
+
+    return "Target audiences:\n" + "\n\n".join(audience_info)
+
 @tool("Analyze All Audiences")
 def analyze_all_audiences(topic: str, platform: str = "LinkedIn") -> str:
     """Analyze topic fit for ALL target audiences and return complete analysis"""
