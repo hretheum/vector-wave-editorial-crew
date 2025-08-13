@@ -10,6 +10,7 @@ Submoduł zawierający AI Writing Flow (crews, flows) oraz interfejs użytkownik
 ## References
 - docs/integration/PORT_ALLOCATION.md
 - PROJECT_CONTEXT.md
+- docs/KPI_VALIDATION_FRAMEWORK.md
 # Submoduł Kolegium
 
 ### Cel

@@ -239,3 +239,4 @@ curl -s http://localhost:8003/health | jq '.status'
 - docs/integration/PORT_ALLOCATION.md (port 8003)
 - docs/GAMMA_INTEGRATION_PLAN.md
 - PROJECT_CONTEXT.md
+- docs/KPI_VALIDATION_FRAMEWORK.md

@@ -329,6 +329,7 @@ curl -s -H 'Authorization: Bearer dev' \
 - docs/integration/PORT_ALLOCATION.md (port 8081)
 - PROJECT_CONTEXT.md (SOP/kanban)
 - target-version/ANALYTICS_SERVICE_ARCHITECTURE.md
+- docs/KPI_VALIDATION_FRAMEWORK.md
 
 ---
 
