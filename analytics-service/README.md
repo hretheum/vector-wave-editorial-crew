@@ -1,6 +1,6 @@
-# Analytics Blackbox Service
+# Analytics Service
 
-Placeholder analytics service for Vector Wave platform providing API endpoints for future analytics implementation.
+Production-ready skeleton for multi‑platform analytics in Vector Wave. Exposes stable API surface with placeholder implementations wired to ChromaDB and clear extension points.
 
 ## 📋 Overview
 
@@ -19,36 +19,40 @@ Placeholder analytics service for Vector Wave platform providing API endpoints f
 
 ### Docker Deployment
 ```bash
-# Build and run with docker-compose
-docker-compose up -d analytics-blackbox
+# Build and run with docker-compose (root service: analytics-service)
+docker-compose up -d analytics-service
 
 # Check service health
-curl http://localhost:8080/health
+curl http://localhost:8081/health
 ```
 
-### API Usage
+### API Usage (examples)
 ```python
 import requests
 
-# Track publication performance
-response = requests.post("http://localhost:8080/track-publication", json={
-    "publication_id": "pub-001",
-    "platform": "linkedin",
-    "metrics": {
-        "views": 1250,
-        "likes": 89,
-        "shares": 12,
-        "engagement_rate": 0.086
-    },
-    "user_id": "user-123",
-    "content_type": "article"
-})
+# Manual metrics entry (LinkedIn has no public API)
+headers = {"Authorization": "Bearer dev"}
+response = requests.post(
+    "http://localhost:8081/analytics/data/manual-entry",
+    headers=headers,
+    json={
+        "publication_id": "pub-001",
+        "platform": "linkedin",
+        "platform_post_id": "abc123",
+        "metrics": {"views": 1250, "reactions": 89, "comments": 12, "shares": 7},
+        "entry_date": "2025-08-13T10:00:00Z",
+        "notes": "weekly snapshot"
+    }
+)
+print(response.json())
 
-print(f"Tracked: {response.json()['status']}")
-
-# Get user insights
-insights = requests.get("http://localhost:8080/insights/user-123")
-print(f"Recommendations: {insights.json()['placeholder_recommendations']}")
+# Get analytics insights
+insights = requests.get(
+    "http://localhost:8081/analytics/insights/user-123",
+    headers=headers,
+    params={"time_period": "30d", "platforms": ["linkedin", "twitter"]}
+)
+print(insights.json()["recommendations"]) 
 ```
 
 ## 🏗️ Architecture
@@ -74,43 +78,57 @@ Publication Metrics → Analytics Blackbox (8080)
 User Insights ← Placeholder Analytics ← Platform Analytics
 ```
 
-## 🔧 API Endpoints
+## 🔧 API Endpoints (v2.0.0)
 
-### Core Endpoints
-- `POST /track-publication` - Track publication performance metrics
-- `GET /insights/{user_id}` - Get personalized user insights
-- `GET /analytics/{platform}` - Get platform-specific analytics
-- `GET /stats` - Global service statistics
-- `GET /health` - Service health check
-- `GET /` - Service information
+### System
+- `GET /` — Service information (version, capabilities, platforms)
+- `GET /health` — Comprehensive health check (ChromaDB, collectors, circuit breakers)
 
-### Publication Tracking
+### Platform Management
+- `POST /analytics/platforms/{platform}/configure` — Configure data collection
+  - Path param: `platform` ∈ {ghost, twitter, linkedin, beehiiv}
+  - Body: `PlatformConfig`
+
+### Data Collection
+- `POST /analytics/data/manual-entry` — Submit manual metrics (e.g., LinkedIn)
+  - Body: `ManualMetricsEntry`
+
+### Analytics
+- `GET /analytics/insights/{user_id}` — Generate comprehensive insights
+  - Query: `time_period`, optional `platforms[]`, `content_types[]`
+
+### Manual Metrics Entry
 ```bash
-curl -X POST http://localhost:8080/track-publication \
+curl -X POST http://localhost:8081/analytics/data/manual-entry \
+  -H "Authorization: Bearer dev" \
   -H "Content-Type: application/json" \
   -d '{
     "publication_id": "pub-001",
     "platform": "linkedin",
-    "metrics": {
-      "views": 1250,
-      "likes": 89,
-      "shares": 12,
-      "comments": 7,
-      "engagement_rate": 0.086
-    },
-    "user_id": "user-123",
-    "content_type": "article"
+    "platform_post_id": "abc123",
+    "metrics": {"views": 1250, "reactions": 89, "comments": 12, "shares": 7},
+    "entry_date": "2025-08-13T10:00:00Z",
+    "notes": "weekly snapshot"
   }'
 ```
 
-### User Insights
+### Analytics Insights
 ```bash
-curl http://localhost:8080/insights/user-123
+curl -H "Authorization: Bearer dev" \
+  "http://localhost:8081/analytics/insights/user-123?time_period=30d&platforms=linkedin&platforms=twitter"
 ```
 
-### Platform Analytics
+### Platform Configuration
 ```bash
-curl http://localhost:8080/analytics/linkedin
+curl -X POST http://localhost:8081/analytics/platforms/linkedin/configure \
+  -H "Authorization: Bearer dev" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "linkedin",
+    "collection_method": "manual",
+    "collection_frequency": "weekly",
+    "enabled_metrics": ["views", "reactions", "comments", "shares"]
+  }'
 ```
 
 ## 📊 Configuration
@@ -119,21 +137,29 @@ curl http://localhost:8080/analytics/linkedin
 ```bash
 # Service configuration
 HOST=0.0.0.0
-PORT=8080
+SERVICE_PORT=8081
 DEBUG=false
+
+# External services
+CHROMADB_URL=http://localhost:8000
 ```
 
 ### Supported Platforms
 - **LinkedIn**: Professional networking and business content
 - **Twitter**: Social media and short-form content  
-- **BeehiIV**: Newsletter and email marketing
+- **Beehiiv**: Newsletter and email marketing
 - **Ghost**: Blog and long-form content
+
+## 🔐 Security
+
+- Auth scheme: HTTP Bearer (temporary dev placeholder). Pass `Authorization: Bearer <token>`.
+- JWT validation is not enforced yet; endpoints accept any non-empty token. Do not expose publicly.
 
 ## 🧪 Testing
 
 ### Health Check
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:8081/health
 ```
 
 ### Full Test Suite
@@ -144,13 +170,13 @@ python test_analytics_blackbox.py
 ### Manual Testing Examples
 ```bash
 # Service information
-curl http://localhost:8080/
+curl http://localhost:8081/
 
 # Global statistics
-curl http://localhost:8080/stats
+curl http://localhost:8081/health | jq '.'
 
 # API documentation
-open http://localhost:8080/docs
+open http://localhost:8081/docs
 ```
 
 ## 🚀 Future Implementation
@@ -286,7 +312,7 @@ async def new_analytics_feature():
 
 ---
 
-**Status**: ✅ Task 3.3.1 Completed - Analytics API Placeholders Implemented  
-**Mode**: Placeholder functionality ready for future analytics integration  
+**Status**: Drafted API skeleton implemented (v2.0.0); endpoints stable, logic placeholder  
+**Mode**: Production-ready scaffolding with ChromaDB integration stubs  
 **Integration**: Ready for Publishing Orchestrator and Vector Wave ecosystem  
-**Future**: Complete analytics platform with AI-powered insights and ML recommendations
+**Next**: Collectors hardening, JWT validation, persistence beyond ChromaDB metadata
