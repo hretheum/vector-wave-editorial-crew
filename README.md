@@ -1,3 +1,15 @@
+# Kolegium (Editorial Crew & Vector Wave UI)
+
+## Overview
+Submoduł zawierający AI Writing Flow (crews, flows) oraz interfejs użytkownika Vector Wave UI.
+
+## KPIs i Walidacja
+- Health (komponentów UI/API zgodnie z README poszczególnych usług)
+- CI-Light testy `kolegium/docker-compose.test.yml` przechodzą lokalnie
+
+## References
+- docs/integration/PORT_ALLOCATION.md
+- PROJECT_CONTEXT.md
 # Submoduł Kolegium
 
 ### Cel

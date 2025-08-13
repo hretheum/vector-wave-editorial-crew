@@ -312,6 +312,26 @@ async def new_analytics_feature():
 
 ---
 
+## KPIs i Walidacja
+
+- Health: `GET /health` P95 < 80ms; status 200
+- ChromaDB: `chromadb_status != error`; collections_available >= 3
+- Insights: `GET /analytics/insights/{user_id}` returns data_quality_score in [0,1]
+
+Smoke:
+```bash
+curl -s http://localhost:8081/health | jq '.status'
+curl -s -H 'Authorization: Bearer dev' \
+  "http://localhost:8081/analytics/insights/user-123?time_period=30d" | jq '.data_quality_score'
+```
+
+## References
+- docs/integration/PORT_ALLOCATION.md (port 8081)
+- PROJECT_CONTEXT.md (SOP/kanban)
+- target-version/ANALYTICS_SERVICE_ARCHITECTURE.md
+
+---
+
 **Status**: Drafted API skeleton implemented (v2.0.0); endpoints stable, logic placeholder  
 **Mode**: Production-ready scaffolding with ChromaDB integration stubs  
 **Integration**: Ready for Publishing Orchestrator and Vector Wave ecosystem  
