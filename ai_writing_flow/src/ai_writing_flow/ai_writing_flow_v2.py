@@ -131,14 +131,17 @@ class AIWritingFlowV2:
         # Initialize DashboardAPI
         self.dashboard_api = DashboardAPI(self.flow_metrics)
         
-        # Initialize storage
-        storage_config = StorageConfig(
-            storage_path=storage_path or "metrics_data",
-            retention_days=30,
-            aggregation_intervals=[60, 300, 3600, 86400]  # 1m, 5m, 1h, 1d in seconds
-        )
-        
-        self.metrics_storage = MetricsStorage(storage_config)
+        # Initialize storage (skip in CI to avoid file locking under concurrency)
+        ci_light = os.getenv('CI', '0') in ('1', 'true', 'TRUE') or os.getenv('CI_LIGHT', '0') in ('1', 'true', 'TRUE')
+        if not ci_light:
+            storage_config = StorageConfig(
+                storage_path=storage_path or "metrics_data",
+                retention_days=30,
+                aggregation_intervals=[60, 300, 3600, 86400]  # 1m, 5m, 1h, 1d in seconds
+            )
+            self.metrics_storage = MetricsStorage(storage_config)
+        else:
+            self.metrics_storage = None
         
         # Initialize alerting if enabled
         if self.alerting_enabled:
