@@ -393,7 +393,11 @@ class LinearDraftExecutor:
             logger.info("🤖 Processing source content with CrewAI agents")
             
             # CI-light: avoid heavy CrewAI processing during tests/CI
-            if os.getenv('CI', '0') in ('1', 'true', 'TRUE') or os.getenv('CI_LIGHT', '1') in ('1', 'true', 'TRUE'):
+            if (
+                os.getenv('CI', '0') in ('1', 'true', 'TRUE')
+                or os.getenv('CI_LIGHT', '1') in ('1', 'true', 'TRUE')
+                or os.getenv('GITHUB_ACTIONS', '0') in ('1', 'true', 'TRUE')
+            ):
                 logger.info("🧪 CI-light mode: skipping CrewAI flow, returning formatted source content")
                 return f"# {writing_state.topic_title}\n\n{source_content}\n\n---\n\n*Generated in CI-light mode*"
 

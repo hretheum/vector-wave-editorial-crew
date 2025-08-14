@@ -283,7 +283,11 @@ class LinearAIWritingFlow:
         # Relax guard timeouts in CI to avoid spurious timeouts under concurrency
         try:
             import os as _os
-            if _os.getenv('CI', '0') in ('1', 'true', 'TRUE') or _os.getenv('CI_LIGHT', '0') in ('1', 'true', 'TRUE'):
+            if (
+                _os.getenv('CI', '0') in ('1', 'true', 'TRUE')
+                or _os.getenv('CI_LIGHT', '0') in ('1', 'true', 'TRUE')
+                or _os.getenv('GITHUB_ACTIONS', '0') in ('1', 'true', 'TRUE')
+            ):
                 if hasattr(self.execution_guards, 'set_timeouts'):
                     self.execution_guards.set_timeouts(stage_timeout_seconds=120.0, flow_timeout_seconds=600.0)
         except Exception:
