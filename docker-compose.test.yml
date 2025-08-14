@@ -12,5 +12,5 @@ services:
       - ./:/ws:rw
     command: >-
       bash -lc "python -m pip install -U pip && \
-      (python -m pip install -r tests/requirements.txt || python -m pip install crewai==0.157.0 crewai-tools==0.60.0 openai anthropic aiohttp httpx requests pydantic python-dotenv pyyaml structlog psutil pytest pytest-asyncio pytest-cov) && \
-      PYTHONPATH=ai_writing_flow/src CI_LIGHT=${CI_LIGHT:-1} pytest ${TESTARGS:- -q ai_writing_flow/tests}"
+      python -m pip install crewai==0.157.0 crewai-tools==0.60.0 openai anthropic aiohttp httpx requests pydantic python-dotenv pyyaml structlog psutil pytest pytest-asyncio pytest-cov pytest-timeout && \
+      PYTHONPATH=src CI_LIGHT=${CI_LIGHT:-1} pytest ${TESTARGS:- -q tests}"

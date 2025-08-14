@@ -4,6 +4,7 @@ Tests for CrewAI tools with Knowledge Base integration
 """
 
 import pytest
+import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 from typing import Dict, Any
 
