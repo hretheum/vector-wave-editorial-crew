@@ -210,10 +210,14 @@ class KnowledgeAdapter:
                    docs_path=str(self.docs_path),
                    ci_light=self.ci_light)
     
-    async def _get_session(self) -> aiohttp.ClientSession:
+    async def _get_session(self):
         """Get or create HTTP session with connection pooling"""
         if self._session is None or getattr(self._session, 'closed', False):
             if aiohttp is None:
+                # In CI-light mode, we don't need a real session
+                if self.ci_light:
+                    self._session = object()  # placeholder
+                    return self._session
                 raise AdapterError("aiohttp is not available in this environment")
             timeout = aiohttp.ClientTimeout(total=self.timeout)
             connector = aiohttp.TCPConnector(limit=10, limit_per_host=5)
@@ -252,7 +256,7 @@ class KnowledgeAdapter:
             AdapterError: For other KB-related errors
         """
         # CI-Light deterministic response (no network)
-        if self.ci_light:
+        if self.ci_light or aiohttp is None:
             # Allow forcing unavailability via env for specific tests
             kb_enabled = os.getenv('CI_LIGHT_KB_AVAILABLE', '1') in ('1', 'true', 'TRUE')
             if not kb_enabled:
