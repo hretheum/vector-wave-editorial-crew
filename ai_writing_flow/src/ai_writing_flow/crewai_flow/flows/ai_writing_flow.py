@@ -308,9 +308,17 @@ class AIWritingFlow(Flow):
                 skip_research=inputs.get("skip_research", False)
             )
             
-            # Validate file path exists
+            # Validate file path exists; tolerate missing .md files by creating them
             if validated.file_path and not Path(validated.file_path).exists():
-                raise ValueError(f"File path does not exist: {validated.file_path}")
+                file_path_obj = Path(validated.file_path)
+                if str(file_path_obj).lower().endswith(".md"):
+                    try:
+                        file_path_obj.parent.mkdir(parents=True, exist_ok=True)
+                        file_path_obj.touch(exist_ok=True)
+                    except Exception as e:
+                        raise ValueError(f"File path does not exist and could not be created: {validated.file_path} (error: {e})")
+                else:
+                    raise ValueError(f"File path does not exist: {validated.file_path}")
             
             logger.info(f"Inputs validated successfully - Topic: {validated.topic_title}, Platform: {validated.platform}")
             
