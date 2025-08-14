@@ -41,14 +41,12 @@ else:
 
 random.seed(seed)
 
-# Ensure pytest loads this module as a lightweight plugin so we can reseed
-# specific flaky tests deterministically without affecting the whole suite.
+# Register as pytest plugin via -p sitecustomize (this file), and tune settings
 try:
     addopts = os.environ.get("PYTEST_ADDOPTS", "")
-    if "-p ai_writing_flow.sitecustomize" not in addopts:
-        os.environ["PYTEST_ADDOPTS"] = (addopts + " -p ai_writing_flow.sitecustomize").strip()
+    if "-p sitecustomize" not in addopts:
+        os.environ["PYTEST_ADDOPTS"] = (addopts + " -p sitecustomize").strip()
 except Exception:
-    # Non-fatal in non-pytest contexts
     pass
 
 
@@ -69,3 +67,34 @@ def pytest_runtest_setup(item):  # type: ignore
 
     if reseed is not None:
         random.seed(reseed)
+
+
+def pytest_configure(config):  # type: ignore
+    """Register markers and silence noisy warnings in CI."""
+    # Known custom markers used across the suite
+    for marker, desc in [
+        ("integration", "integration tests"),
+        ("performance", "performance tests"),
+        ("heavy_load", "heavy load stress tests"),
+        ("asyncio", "asyncio tests"),
+        ("network", "network access tests"),
+        ("external", "external service tests"),
+    ]:
+        try:
+            config.addinivalue_line("markers", f"{marker}: {desc}")
+        except Exception:
+            pass
+
+    # Silence PytestUnknownMarkWarning and Pydantic deprecation spam
+    try:
+        config.addinivalue_line("filterwarnings", "ignore::pytest.PytestUnknownMarkWarning")
+        config.addinivalue_line("filterwarnings", "ignore:PydanticDeprecatedSince20:*")
+        config.addinivalue_line("filterwarnings", "ignore:could not create cache path:pytest.PytestCacheWarning")
+    except Exception:
+        pass
+
+    # Disable cache provider to avoid writes to /dev under restricted runners
+    try:
+        config.pluginmanager.disable_plugin("cacheprovider")
+    except Exception:
+        pass
