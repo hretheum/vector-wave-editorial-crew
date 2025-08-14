@@ -10,7 +10,10 @@ Implements Clean Architecture with:
 """
 
 import asyncio
-import aiohttp
+try:
+    import aiohttp  # type: ignore
+except Exception:  # pragma: no cover - CI-light shim fallback
+    aiohttp = None
 import json
 import logging
 import os
@@ -22,7 +25,16 @@ from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
 
-import structlog
+try:
+    import structlog  # type: ignore
+except Exception:  # pragma: no cover - CI-light shim fallback
+    class _DummyLogger:
+        def __getattr__(self, _):
+            return lambda *args, **kwargs: None
+    class _DummyStructlog:
+        def get_logger(self, *args, **kwargs):
+            return _DummyLogger()
+    structlog = _DummyStructlog()
 
 # Configure structured logging
 logger = structlog.get_logger(__name__)
@@ -200,7 +212,9 @@ class KnowledgeAdapter:
     
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create HTTP session with connection pooling"""
-        if self._session is None or self._session.closed:
+        if self._session is None or getattr(self._session, 'closed', False):
+            if aiohttp is None:
+                raise AdapterError("aiohttp is not available in this environment")
             timeout = aiohttp.ClientTimeout(total=self.timeout)
             connector = aiohttp.TCPConnector(limit=10, limit_per_host=5)
             self._session = aiohttp.ClientSession(
@@ -212,8 +226,11 @@ class KnowledgeAdapter:
     
     async def close(self):
         """Close HTTP session and cleanup resources"""
-        if self._session and not self._session.closed:
-            await self._session.close()
+        if self._session and not getattr(self._session, 'closed', True):
+            try:
+                await self._session.close()
+            except Exception:
+                pass
     
     async def search_knowledge_base(self, 
                                   query: str, 
