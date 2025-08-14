@@ -535,9 +535,14 @@ class AIWritingFlowV2:
         
         try:
             # Linear flow health
+            guard_status = {}
+            try:
+                guard_status = self.linear_flow.get_execution_guards_status()
+            except Exception as _e:
+                guard_status = {"error": str(_e)}
             health_status["components"]["linear_flow"] = {
                 "status": "healthy",
-                "guard_status": self.linear_flow.get_execution_guards_status()
+                "guard_status": guard_status
             }
             
             # Monitoring health

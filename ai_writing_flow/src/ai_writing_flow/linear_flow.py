@@ -364,8 +364,8 @@ class LinearAIWritingFlow:
         if not content_path.exists():
             raise ValueError(f"Content path does not exist: {inputs.file_path}")
         
-        # Validate platform is supported
-        supported_platforms = ["LinkedIn", "Twitter", "Blog", "Newsletter"]
+        # Validate platform is supported (tolerate additional known platforms used in tests)
+        supported_platforms = ["LinkedIn", "Twitter", "Blog", "Newsletter", "Medium", "DevTo"]
         if inputs.platform not in supported_platforms:
             logger.warning(f"⚠️ Platform '{inputs.platform}' not in supported list: {supported_platforms}")
         

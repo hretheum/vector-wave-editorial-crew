@@ -509,3 +509,14 @@ class LoopPreventionSystem:
         with self._lock:
             self._emergency_stop = True
             logger.critical("🚨 Loop prevention system force stopped")
+
+    def get_status(self) -> Dict[str, Any]:
+        """Lightweight status used by health checks."""
+        with self._lock:
+            return {
+                'emergency_stop': self._emergency_stop,
+                'blocked_methods_count': len(self._blocked_methods),
+                'blocked_stages_count': len(self._blocked_stages),
+                'total_executions': len(self._execution_records),
+                'uptime_seconds': (datetime.now(timezone.utc) - self._start_time).total_seconds(),
+            }
