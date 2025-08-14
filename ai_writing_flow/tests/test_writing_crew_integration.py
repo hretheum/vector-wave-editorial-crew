@@ -43,7 +43,10 @@ def _install_module_stubs():
                 self.QualityCrew = _StubInnerCrew
 
     sys.modules.setdefault(crew_pkg_prefix + 'research_crew', _StubModule(crew_pkg_prefix + 'research_crew', {"summary": "ok"}))
-    sys.modules.setdefault(crew_pkg_prefix + 'audience_crew', _StubModule(crew_pkg_prefix + 'audience_crew', {"alignment": True}))
+    # Provide VECTOR_WAVE_AUDIENCES stub attr expected by __init__
+    audience_mod = _StubModule(crew_pkg_prefix + 'audience_crew', {"alignment": True})
+    setattr(audience_mod, 'VECTOR_WAVE_AUDIENCES', {"default": {"persona": "engineer"}})
+    sys.modules.setdefault(crew_pkg_prefix + 'audience_crew', audience_mod)
     sys.modules.setdefault(crew_pkg_prefix + 'writer_crew', _StubModule(crew_pkg_prefix + 'writer_crew', {"draft": "hello world"}))
     sys.modules.setdefault(crew_pkg_prefix + 'style_crew', _StubModule(crew_pkg_prefix + 'style_crew', {"style": "pass"}))
     sys.modules.setdefault(crew_pkg_prefix + 'quality_crew', _StubModule(crew_pkg_prefix + 'quality_crew', {"quality": "pass"}))
