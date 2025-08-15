@@ -128,6 +128,11 @@ Health check endpoint.
 #### `GET /metrics`
 Publishing orchestrator metrics.
 
+#### `GET /queue/status`
+Status kolejek publikacji. Jeśli skonfigurowano `REDIS_URL` i dostępny jest klient redis,
+zwraca rzeczywiste głębokości kolejek oraz `jobs_by_platform`. W przeciwnym razie zwraca
+streszczenie na podstawie pamięci (`publications_store`).
+
 #### `POST /test/simple`
 Simple test endpoint for basic functionality validation.
 
