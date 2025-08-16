@@ -10,7 +10,11 @@ import structlog
 from typing import Dict, Any, Optional, List, Callable
 from enum import Enum
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+try:
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
+except Exception:
+    BaseFlow = object
 
 from ...models import WritingFlowState
 from ..flows.research_flow import ResearchFlow
@@ -61,7 +65,7 @@ class FeedbackProcessingState(BaseModel):
     total_revisions_time: float = 0.0
 
 
-class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
+class FeedbackProcessingFlow(BaseFlow):
     """
     Processes human feedback and implements flow branching.
     
@@ -90,6 +94,11 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             config: Configuration including max_revisions
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = FeedbackProcessingState()
         self.config = config or {}
         
         # Configuration
@@ -113,7 +122,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             max_revisions=self.state.max_revisions
         )
     
-    @flow_start()
     def process_feedback_decision(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Process human feedback decision
@@ -175,7 +183,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             "processing_time": self.state.feedback_processing_time
         }
     
-    @flow_router(process_feedback_decision)
     def route_by_action(self, processing_output: Dict[str, Any]) -> str:
         """
         Route based on processing action
@@ -193,7 +200,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
         
         return action
     
-    @flow_listen("continue")
     def handle_continue(self) -> Dict[str, Any]:
         """
         Handle approval - continue with current flow
@@ -214,7 +220,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             "feedback_applied": False
         }
     
-    @flow_listen("revise")
     def handle_revision(self) -> Dict[str, Any]:
         """
         Handle revision request - re-run current stage
@@ -278,7 +283,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             "feedback_applied": True
         }
     
-    @flow_listen("edit")
     def handle_edit(self) -> Dict[str, Any]:
         """
         Handle edit request - apply edits and continue
@@ -316,7 +320,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
         
         return edit_result
     
-    @flow_listen("redirect")
     def handle_redirect(self) -> Dict[str, Any]:
         """
         Handle redirect request - change flow path
@@ -365,7 +368,6 @@ class FeedbackProcessingFlow(Flow[FeedbackProcessingState]):
             "feedback_applied": True
         }
     
-    @flow_listen("terminate")
     def handle_termination(self) -> Dict[str, Any]:
         """
         Handle termination request

@@ -74,12 +74,16 @@ class CircuitBreaker:
         self._success_count = 0
         self._failure_count_total = 0
         self._last_success_time: Optional[datetime] = None
+        # Track how the breaker entered OPEN to tune transitions
+        self._opened_manually: bool = False
     
     @property
     def state(self) -> CircuitBreakerState:
         """Get current circuit breaker state."""
         with self._lock:
-            self._update_state()
+            # Lazily update state on access to reflect time-based transitions
+            # Only allow OPEN -> HALF_OPEN on read if it was manually forced open.
+            self._update_state_on_check()
             return self._state
     
     @property
@@ -97,12 +101,18 @@ class CircuitBreaker:
         """Check if circuit is half-open (testing recovery)."""
         return self.state == CircuitBreakerState.HALF_OPEN
     
-    def _update_state(self) -> None:
-        """Update circuit breaker state based on current conditions."""
-        if self._state == CircuitBreakerState.OPEN:
-            if self._last_failure_time and self._should_attempt_reset():
+    def _update_state_on_check(self) -> None:
+        """Update state when merely checking status (non-intrusive)."""
+        if self._state == CircuitBreakerState.OPEN and self._opened_manually:
+            if self._should_attempt_reset():
                 self._state = CircuitBreakerState.HALF_OPEN
-                logger.info(f"Circuit breaker '{self.name}' entering HALF_OPEN state")
+                logger.info(f"Circuit breaker '{self.name}' entering HALF_OPEN state (check)")
+
+    def _update_state_on_call(self) -> None:
+        """Update state right before attempting a protected call."""
+        if self._state == CircuitBreakerState.OPEN and self._should_attempt_reset():
+            self._state = CircuitBreakerState.HALF_OPEN
+            logger.info(f"Circuit breaker '{self.name}' entering HALF_OPEN state (call)")
     
     def _should_attempt_reset(self) -> bool:
         """Check if enough time has passed to attempt reset."""
@@ -157,12 +167,14 @@ class CircuitBreaker:
             if self._state == CircuitBreakerState.HALF_OPEN:
                 # Failure in half-open state means service is still down
                 self._state = CircuitBreakerState.OPEN
+                self._opened_manually = False
                 logger.warning(
                     f"Circuit breaker '{self.name}' reopened after failure in HALF_OPEN state"
                 )
             elif self._failure_count >= self.failure_threshold:
                 # Too many failures, open the circuit
                 self._state = CircuitBreakerState.OPEN
+                self._opened_manually = False
                 logger.error(
                     f"Circuit breaker '{self.name}' opened after {self._failure_count} failures"
                 )
@@ -193,7 +205,8 @@ class CircuitBreaker:
             self._call_count += 1
             
             # Check state and potentially update
-            if self.state == CircuitBreakerState.OPEN:
+            self._update_state_on_call()
+            if self._state == CircuitBreakerState.OPEN:
                 raise CircuitBreakerError(
                     f"Circuit breaker '{self.name}' is OPEN - calls are blocked"
                 )
@@ -228,7 +241,8 @@ class CircuitBreaker:
             self._call_count += 1
             
             # Check state
-            if self.state == CircuitBreakerState.OPEN:
+            self._update_state_on_call()
+            if self._state == CircuitBreakerState.OPEN:
                 raise CircuitBreakerError(
                     f"Circuit breaker '{self.name}' is OPEN - calls are blocked"
                 )
@@ -265,6 +279,7 @@ class CircuitBreaker:
             self._state = CircuitBreakerState.CLOSED
             self._failure_count = 0
             self._last_failure_time = None
+            self._opened_manually = False
             logger.info(f"Circuit breaker '{self.name}' manually reset to CLOSED")
     
     def force_open(self) -> None:
@@ -272,6 +287,7 @@ class CircuitBreaker:
         with self._lock:
             self._state = CircuitBreakerState.OPEN
             self._last_failure_time = datetime.now()
+            self._opened_manually = True
             logger.warning(f"Circuit breaker '{self.name}' manually forced to OPEN")
     
     def get_status(self) -> Dict[str, Any]:

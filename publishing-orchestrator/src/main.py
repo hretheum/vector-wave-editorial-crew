@@ -21,6 +21,13 @@ try:
 except Exception:
     from adapters import PLATFORM_ADAPTERS  # type: ignore
     from variations import generate_variations  # type: ignore
+from linkedin_api import publish_pdf_from_url, is_configured as linkedin_api_configured
+
+# Optional Redis support for queue status
+try:
+    import redis  # type: ignore
+except Exception:  # pragma: no cover
+    redis = None  # type: ignore
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -110,6 +117,64 @@ GAMMA_PPT_URL = os.getenv("GAMMA_PPT_URL", "http://localhost:8003")
 PRESENTON_URL = os.getenv("PRESENTON_URL", "http://localhost:8089")
 LINKEDIN_PPT_GENERATOR_URL = os.getenv("LINKEDIN_PPT_GENERATOR_URL", "http://localhost:8002")
 
+
+def _get_redis_queue_stats() -> Optional[Dict[str, Any]]:
+    """Return Redis queue stats if REDIS_URL and redis client are available.
+
+    Expects queues and keys compatible with publisher's Redis schema:
+    - Lists: publisher:queue:immediate, publisher:queue:processing, publisher:queue:failed, publisher:queue:completed
+    - ZSet:  publisher:queue:scheduled
+    - Hash:  publisher:stats (total_jobs, jobs_<platform>)
+    """
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url or not redis:
+        return None
+
+    try:
+        client = redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_timeout=1.0,
+            socket_connect_timeout=1.0,
+            retry_on_timeout=True,
+        )
+        client.ping()
+
+        queue_immediate = "publisher:queue:immediate"
+        queue_scheduled = "publisher:queue:scheduled"
+        queue_processing = "publisher:queue:processing"
+        queue_failed = "publisher:queue:failed"
+        queue_completed = "publisher:queue:completed"
+        key_stats = "publisher:stats"
+
+        immediate_count = client.llen(queue_immediate)
+        scheduled_count = client.zcard(queue_scheduled)
+        processing_count = client.llen(queue_processing)
+        failed_count = client.llen(queue_failed)
+        completed_count = client.llen(queue_completed)
+
+        stats = client.hgetall(key_stats) or {}
+
+        return {
+            "redis_connected": True,
+            "queues": {
+                "immediate": int(immediate_count),
+                "scheduled": int(scheduled_count),
+                "processing": int(processing_count),
+                "failed": int(failed_count),
+                "completed": int(completed_count),
+            },
+            "total_jobs": int(stats.get("total_jobs", 0)),
+            "jobs_by_platform": {
+                "twitter": int(stats.get("jobs_twitter", 0)),
+                "linkedin": int(stats.get("jobs_linkedin", 0)),
+                "substack": int(stats.get("jobs_substack", 0)),
+                "ghost": int(stats.get("jobs_ghost", 0)),
+            },
+        }
+    except Exception:
+        return None
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -152,6 +217,54 @@ async def get_metrics():
         "analytics_events": len(analytics_events),
         "presentor_ready": presentor_ready,
         "service": "publishing-orchestrator"
+    }
+
+
+@app.get("/queue/status")
+async def get_queue_status():
+    """Queue status for production orchestrator (8085).
+
+    Prefer Redis (when REDIS_URL and redis client available). Fallback to
+    in-memory publication stats if Redis is not configured.
+    """
+    redis_stats = _get_redis_queue_stats()
+    if redis_stats and redis_stats.get("redis_connected"):
+        return {
+            "queue_manager": "Redis",
+            "connected": True,
+            "queues": redis_stats["queues"],
+            "statistics": {
+                "total_jobs_processed": redis_stats.get("total_jobs", 0),
+                "jobs_by_platform": redis_stats.get("jobs_by_platform", {}),
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    # Fallback: summarize from in-memory publications_store
+    status_counts: Dict[str, int] = {"in_progress": 0, "completed": 0, "failed": 0, "scheduled": 0}
+    for pub in publications_store.values():
+        st = str(pub.get("status", "")).lower()
+        if st in status_counts:
+            status_counts[st] += 1
+        elif st:
+            status_counts["in_progress"] += 1
+
+    return {
+        "queue_manager": "InMemory",
+        "connected": False,
+        "queues": {
+            "immediate": 0,
+            "scheduled": status_counts["scheduled"],
+            "processing": status_counts["in_progress"],
+            "failed": status_counts["failed"],
+            "completed": status_counts["completed"],
+        },
+        "statistics": {
+            "total_jobs_processed": status_counts["completed"],
+            "jobs_by_platform": {},
+        },
+        "note": "Redis not configured; returning in-memory publication summary",
+        "timestamp": datetime.now().isoformat(),
     }
 
 async def call_ai_writing_flow(topic: TopicRequest, platform: str) -> Dict[str, Any]:
@@ -433,7 +546,8 @@ async def orchestrate_publication(request: PublicationRequest,
             success_count += 1
             
             # Special LinkedIn handling (presentation generation via Gamma/Presenton)
-            if platform == PlatformType.LINKEDIN and should_generate_presentation(content):
+            # Try to generate presentation for LinkedIn; generator may decide
+            if platform == PlatformType.LINKEDIN:
                 presentation = await generate_linkedin_presentation({
                     **content,
                     "topic": request.topic.dict() if hasattr(request, "topic") else {}
@@ -445,6 +559,19 @@ async def orchestrate_publication(request: PublicationRequest,
                     for key in ("ppt_url", "pdf_url", "preview_url"):
                         if presentation.get(key):
                             assets[key] = presentation[key]
+                    # Optional: if LinkedIn API configured, publish automatically as document post
+                    try:
+                        if await linkedin_api_configured() and presentation.get("pdf_url"):
+                            post = await publish_pdf_from_url(
+                                presentation["pdf_url"],
+                                text=content.get("content", ""),
+                                title=request.topic.title,
+                                description=request.topic.description
+                            )
+                            if post:
+                                content_variations[platform.value].setdefault("linkedin_manual_upload", {})["auto_publish"] = post
+                    except Exception as e:
+                        logger.warning(f"LinkedIn API auto-publish failed: {e}")
             
             # Schedule publication
             job_id = await schedule_platform_publication(
@@ -474,15 +601,28 @@ async def orchestrate_publication(request: PublicationRequest,
     
     logger.info(f"Publication {publication_id} completed. Success: {success_count}, Errors: {len(errors)}")
     
+    # Enrich LinkedIn content with manual upload URLs if presentation was generated
+    enriched_platform_content: Dict[str, Dict[str, Any]] = {}
+    for plat, data in content_variations.items():
+        enriched = {
+            "content": data.get("content", ""),
+            "quality_score": data.get("quality_score", 0),
+            "validation_results": data.get("validation_results", {}),
+            "generation_time": data.get("generation_time", 0)
+        }
+        if data.get("presentation"):
+            enriched["manual_upload"] = {
+                "ppt_url": data["presentation"].get("ppt_url"),
+                "pdf_url": data["presentation"].get("pdf_url"),
+                "provider": data["presentation"].get("provider")
+            }
+        enriched_platform_content[plat] = enriched
+
     return PublicationResponse(
         publication_id=publication_id,
         request_id=request.request_id,
         status=PublicationStatus(final_status),
-        platform_content={k: {"content": v.get("content", ""), 
-                             "quality_score": v.get("quality_score", 0),
-                             "validation_compliant": v.get("validation_results", {}).get("is_compliant", True),
-                             "generation_time": v.get("generation_time", 0)} 
-                         for k, v in content_variations.items()},
+        platform_content=enriched_platform_content,
         scheduled_jobs=scheduled_jobs,
         generation_time=generation_time,
         success_count=success_count,

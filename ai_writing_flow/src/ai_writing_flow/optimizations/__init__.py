@@ -11,7 +11,7 @@ from .optimized_draft_generation import OptimizedDraftGeneration
 from .optimized_audience_alignment import OptimizedAudienceAlignment
 from .optimized_quality_assessment import OptimizedQualityAssessment
 from .cache_manager import IntelligentCacheManager
-from .performance_optimizer import PerformanceOptimizer
+from .performance_optimizer import PerformanceOptimizer, create_performance_optimizer
 
 __all__ = [
     'OptimizedKnowledgeSearch',
@@ -20,5 +20,6 @@ __all__ = [
     'OptimizedAudienceAlignment',
     'OptimizedQualityAssessment',
     'IntelligentCacheManager',
-    'PerformanceOptimizer'
+    'PerformanceOptimizer',
+    'create_performance_optimizer'
 ]

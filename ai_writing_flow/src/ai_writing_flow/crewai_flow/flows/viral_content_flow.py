@@ -11,7 +11,11 @@ import time
 import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start, listen
+try:
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
+except Exception:
+    BaseFlow = object
 
 from ...models import (
     ContentAnalysisResult,
@@ -62,7 +66,7 @@ class ViralFlowState(BaseModel):
     estimated_reach: int = 0
 
 
-class ViralContentFlow(Flow[ViralFlowState]):
+class ViralContentFlow(BaseFlow):
     """
     Viral Content Flow with specialized processing:
     
@@ -84,6 +88,11 @@ class ViralContentFlow(Flow[ViralFlowState]):
                 - viral_threshold: Minimum viral score
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = ViralFlowState()
         self.config = config or {}
         
         # Default configuration
@@ -106,7 +115,6 @@ class ViralContentFlow(Flow[ViralFlowState]):
             config=self.config
         )
     
-    @start()
     def trend_research_timing(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Quick trend research and timing analysis
@@ -276,7 +284,6 @@ class ViralContentFlow(Flow[ViralFlowState]):
             )
             raise
     
-    @flow_listen(trend_research_timing)
     def viral_writing_optimization(self, research_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create viral content with engagement hooks
@@ -397,7 +404,6 @@ Follow for more insights like this 🚀"""
         
         return main_content
     
-    @flow_listen(viral_writing_optimization)
     def engagement_optimization_final(self, writing_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Optimize content for maximum engagement

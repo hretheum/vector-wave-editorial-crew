@@ -9,7 +9,11 @@ import time
 import structlog
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+try:
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow  # Use real Flow when available
+except Exception:
+    BaseFlow = object  # Fall back to simple object base
 
 from ...models import (
     ContentAnalysisResult,
@@ -56,7 +60,7 @@ class ResearchFlowState(BaseModel):
     total_sources: int = 0
 
 
-class ResearchFlow(Flow[ResearchFlowState]):
+class ResearchFlow(BaseFlow):
     """
     Research Flow with conditional routing based on content type.
     
@@ -82,7 +86,13 @@ class ResearchFlow(Flow[ResearchFlowState]):
                 - research_depth: Research depth level
                 - min_sources: Minimum sources for research
         """
-        super().__init__()
+        # Ensure base class init (if any)
+        try:
+            super().__init__()  # type: ignore[misc]
+        except Exception:
+            pass
+        # Provide state explicitly (decouple from CrewAI Flow runtime)
+        self.state = ResearchFlowState()
         self.config = config or {}
         
         # Default configuration
@@ -118,7 +128,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             recovered=hasattr(self, '_recovered_from_checkpoint')
         )
     
-    @start()
     def analyze_content(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Analyze content and determine research needs
@@ -207,7 +216,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             )
             raise
     
-    @flow_router(analyze_content)
     def route_by_content_type(self, analysis_output: Dict[str, Any]) -> str:
         """
         Router: Determine research path based on content type with KB enhancement
@@ -493,7 +501,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
         # Return guidance only if we have a recommendation
         return guidance if guidance["recommendation"] else None
     
-    @flow_listen("deep_research")
     def conduct_deep_research(self) -> Dict[str, Any]:
         """
         Deep research for technical content
@@ -609,7 +616,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             )
             raise
     
-    @flow_listen("quick_research")
     def conduct_quick_research(self) -> Dict[str, Any]:
         """
         Quick research for viral content
@@ -675,7 +681,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             "research_type": "quick"
         }
     
-    @flow_listen("standard_research")
     def conduct_standard_research(self) -> Dict[str, Any]:
         """
         Standard research for balanced content
@@ -741,7 +746,6 @@ class ResearchFlow(Flow[ResearchFlowState]):
             "research_type": "standard"
         }
     
-    @flow_listen("skip_research")
     def skip_research_process(self) -> Dict[str, Any]:
         """
         Skip research for low-viability content

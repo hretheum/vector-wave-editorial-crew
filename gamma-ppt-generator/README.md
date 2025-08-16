@@ -223,3 +223,20 @@ This service integrates with:
 
 **Task 4.1.1 Status**: ✅ **COMPLETED**  
 **Service Foundation**: Gamma.app API wrapper with circuit breaker ready for integration
+
+## KPIs i Walidacja
+
+- Health: `GET /health` P95 < 80ms; status 200
+- API quota awareness: `api_calls_remaining` exposed in health when real key configured
+- Circuit breaker: state remains CLOSED during normal operation
+
+Smoke:
+```bash
+curl -s http://localhost:8003/health | jq '.status'
+```
+
+## References
+- docs/integration/PORT_ALLOCATION.md (port 8003)
+- docs/GAMMA_INTEGRATION_PLAN.md
+- PROJECT_CONTEXT.md
+- docs/KPI_VALIDATION_FRAMEWORK.md

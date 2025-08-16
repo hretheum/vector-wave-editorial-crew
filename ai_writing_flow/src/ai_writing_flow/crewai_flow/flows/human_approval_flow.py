@@ -13,7 +13,11 @@ import structlog
 from typing import Dict, Any, Optional, List
 from enum import Enum
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start as flow_start, listen as flow_listen, router as flow_router
+try:
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
+except Exception:
+    BaseFlow = object
 
 from ...models import (
     HumanFeedbackDecision,
@@ -78,7 +82,7 @@ class HumanApprovalState(BaseModel):
     timeout_count: int = 0
 
 
-class HumanApprovalFlow(Flow[HumanApprovalState]):
+class HumanApprovalFlow(BaseFlow):
     """
     Human Approval Flow with review integration points.
     
@@ -138,6 +142,11 @@ class HumanApprovalFlow(Flow[HumanApprovalState]):
                 - auto_approve: Auto-approve if True (testing)
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = HumanApprovalState()
         self.config = config or {}
         
         # UI Bridge for human interaction
@@ -157,7 +166,6 @@ class HumanApprovalFlow(Flow[HumanApprovalState]):
             config=self.config
         )
     
-    @flow_listen("draft_completion")
     def review_draft_completion(self, draft_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Human review point after draft generation
@@ -178,7 +186,6 @@ class HumanApprovalFlow(Flow[HumanApprovalState]):
             }
         )
     
-    @flow_listen("quality_gate")
     def review_quality_gate(self, quality_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Human review at final quality gate
@@ -215,7 +222,6 @@ class HumanApprovalFlow(Flow[HumanApprovalState]):
             }
         )
     
-    @flow_listen("topic_viability")
     def review_topic_viability(self, viability_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Human review for low-viability topics
@@ -236,7 +242,6 @@ class HumanApprovalFlow(Flow[HumanApprovalState]):
             }
         )
     
-    @flow_listen("routing_override")
     def review_routing_decision(self, routing_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Human override for routing decisions

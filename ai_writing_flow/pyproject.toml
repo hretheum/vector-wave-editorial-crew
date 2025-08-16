@@ -32,6 +32,8 @@ type = "flow"
 markers = [
     "performance: marks tests as performance/scaling tests",
     "slow: marks tests as slow running",
+    "integration: integration tests",
+    "smoke: basic smoke tests"
 ]
 addopts = [
     "--tb=short",

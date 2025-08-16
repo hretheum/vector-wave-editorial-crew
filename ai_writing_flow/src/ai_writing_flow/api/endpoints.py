@@ -176,6 +176,9 @@ class FlowAPI:
                 self._api_stats["failed_executions"] += 1
             
             # Build response
+            # Be defensive about optional attributes when mocked in tests
+            agents_attr = getattr(final_state, 'agents_executed', None)
+            agents_count = len(agents_attr) if isinstance(agents_attr, list) else 0
             response_data = {
                 "flow_id": flow_id,
                 "status": "completed" if success else "failed",
@@ -186,7 +189,7 @@ class FlowAPI:
                     "quality_score": getattr(final_state, 'quality_score', 0),
                     "style_score": getattr(final_state, 'style_score', 0),
                     "revision_count": getattr(final_state, 'revision_count', 0),
-                    "agents_executed": len(getattr(final_state, 'agents_executed', [])),
+                    "agents_executed": agents_count,
                     "word_count": len(final_state.final_draft.split()) if final_state.final_draft else 0
                 },
                 "errors": [final_state.error_message] if final_state.error_message else [],
@@ -205,8 +208,27 @@ class FlowAPI:
         except Exception as e:
             self._api_stats["failed_executions"] += 1
             
-            error_response = {
-                "flow_id": flow_id if 'flow_id' in locals() else "unknown",
+            # If flow was already started and we have a final_state, treat as a failed execution
+            flow_id_value = flow_id if 'flow_id' in locals() else "unknown"
+            if 'final_state' in locals():
+                try:
+                    fs_error = getattr(final_state, 'error_message', None)
+                except Exception:
+                    fs_error = None
+                error_list = [msg for msg in [fs_error, str(e)] if msg]
+                return {
+                    "flow_id": flow_id_value,
+                    "status": "failed",
+                    "message": f"Flow failed: {fs_error or str(e)}",
+                    "final_draft": None,
+                    "metrics": {},
+                    "errors": error_list + [traceback.format_exc()],
+                    "execution_time": 0.0
+                }
+            
+            # Otherwise it's an API error before the flow started
+            return {
+                "flow_id": flow_id_value,
                 "status": "error",
                 "message": f"API execution error: {str(e)}",
                 "final_draft": None,
@@ -214,8 +236,6 @@ class FlowAPI:
                 "errors": [str(e), traceback.format_exc()],
                 "execution_time": 0.0
             }
-            
-            return error_response
     
     async def get_flow_status(self, flow_id: str) -> Dict[str, Any]:
         """
@@ -250,10 +270,30 @@ class FlowAPI:
             if hasattr(flow, 'ui_bridge') and flow.ui_bridge:
                 session_info = flow.ui_bridge.get_session_info(flow_id)
                 if session_info:
+                    # Robust handling of start_time which may be a datetime-like object with isoformat(),
+                    # a plain string, a dict exposing isoformat, or a Mock in tests.
+                    start_time_value = None
+                    raw_start_time = session_info.get("start_time")
+                    if isinstance(raw_start_time, str):
+                        start_time_value = raw_start_time
+                    else:
+                        iso_attr = getattr(raw_start_time, "isoformat", None) if raw_start_time is not None else None
+                        if callable(iso_attr):
+                            try:
+                                start_time_value = iso_attr()
+                            except Exception:
+                                start_time_value = None
+                        elif isinstance(raw_start_time, dict):
+                            iso_callable = raw_start_time.get("isoformat")
+                            if callable(iso_callable):
+                                try:
+                                    start_time_value = iso_callable()
+                                except Exception:
+                                    start_time_value = None
                     progress_info = {
                         "current_stage": session_info.get("current_stage", "unknown"),
                         "progress_percent": None,  # Would calculate from stage progress
-                        "start_time": session_info.get("start_time", {}).get("isoformat", lambda: None)(),
+                        "start_time": start_time_value,
                         "metrics": session_info.get("metrics", {})
                     }
             
@@ -296,11 +336,16 @@ class FlowAPI:
             )
             
             health_status = temp_flow.get_health_status()
-            
+
+            # Ensure we always return a plain dict (tests may mock this method)
+            if not isinstance(health_status, dict):
+                health_status = {}
+
             # Add API-specific health info
             uptime = (datetime.now(timezone.utc) - self._api_stats["start_time"]).total_seconds()
-            
-            health_status.update({
+
+            result: Dict[str, Any] = {
+                **health_status,
                 "version": "2.0.0",
                 "api_statistics": {
                     "total_requests": self._api_stats["total_requests"],
@@ -310,12 +355,16 @@ class FlowAPI:
                         self._api_stats["successful_executions"] / max(self._api_stats["total_requests"], 1) * 100
                     ),
                     "active_flows": len(self._active_flows),
-                    "cached_results": len(self._flow_results)
+                    "cached_results": len(self._flow_results),
                 },
-                "uptime_seconds": uptime
-            })
-            
-            return health_status
+                "uptime_seconds": uptime,
+            }
+
+            # Guarantee a timestamp field for consumers if missing
+            if "timestamp" not in result:
+                result["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+            return result
             
         except Exception as e:
             return {

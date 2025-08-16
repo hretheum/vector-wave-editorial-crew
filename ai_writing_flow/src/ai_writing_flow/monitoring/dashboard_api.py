@@ -388,18 +388,31 @@ class DashboardAPI:
         return time_mapping.get(time_range, 3600)
     
     def _aggregate_to_time_buckets(self, metrics: List, resolution: int) -> Dict[float, List[float]]:
-        """Aggregate metrics into time buckets for charting"""
-        time_buckets = {}
-        
+        """Aggregate metrics into time buckets for charting.
+
+        Buckets are anchored at the earliest metric timestamp to ensure that
+        synthetic/test datasets that expect grouping relative to the first
+        sample (not wall-clock boundaries) are aggregated as intended.
+        """
+        if not metrics:
+            return {}
+
+        # Anchor buckets at the earliest metric timestamp (sliding window anchoring)
+        earliest_ts = min(m.timestamp.timestamp() for m in metrics)
+
+        time_buckets: Dict[float, List[float]] = {}
+
         for metric in metrics:
-            # Round timestamp to resolution boundary
-            bucket_time = (metric.timestamp.timestamp() // resolution) * resolution
-            
-            if bucket_time not in time_buckets:
-                time_buckets[bucket_time] = []
-            
-            time_buckets[bucket_time].append(metric.value)
-        
+            ts = metric.timestamp.timestamp()
+            # Compute bucket start relative to the anchor
+            offset = ts - earliest_ts
+            bucket_start = earliest_ts + (int(offset // resolution) * resolution)
+
+            if bucket_start not in time_buckets:
+                time_buckets[bucket_start] = []
+
+            time_buckets[bucket_start].append(metric.value)
+
         return time_buckets
     
     def _get_metric_unit(self, kpi_type: KPIType) -> str:

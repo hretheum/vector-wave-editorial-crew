@@ -417,28 +417,27 @@ class AlertManager:
         """Process a triggered rule"""
         current_time = time.time()
         
-        # Check cooldown
+        # Check cooldown (do not early return; allow escalation during cooldown)
         last_alert_key = f"{rule.id}_{rule.kpi_type.value}"
         last_alert_time = self._last_alert_times.get(last_alert_key, 0)
+        in_cooldown = (current_time - last_alert_time) < (rule.cooldown_minutes * 60)
         
-        if current_time - last_alert_time < rule.cooldown_minutes * 60:
-            # Still in cooldown period
-            return
+        # Create or update alert (single active alert per rule)
+        alert_id = rule.id
         
-        # Create or update alert
-        alert_id = f"{rule.id}_{int(current_time)}"
-        
-        # Check if we have an existing active alert for this rule
-        existing_alert = None
-        for alert in self._active_alerts.values():
-            if alert.rule_id == rule.id and alert.status == AlertStatus.ACTIVE:
-                existing_alert = alert
-                break
+        # Fast path: lookup by stable alert_id
+        existing_alert = self._active_alerts.get(alert_id)
+        if existing_alert and existing_alert.status != AlertStatus.ACTIVE:
+            # Treat non-active alerts as non-existing for update path
+            existing_alert = None
         
         if existing_alert:
             # Update existing alert
-            existing_alert.value = value
-            existing_alert.updated_at = datetime.now(timezone.utc)
+            if not in_cooldown:
+                # Only update value/timestamp when not in cooldown
+                existing_alert.value = value
+                existing_alert.updated_at = datetime.now(timezone.utc)
+            # Increment escalation count on every repeated trigger (even during cooldown)
             existing_alert.escalation_count += 1
             
             # Check for escalation
@@ -467,12 +466,24 @@ class AlertManager:
             self._alert_history.append(alert)
             self._stats["total_alerts_created"] += 1
         
-        # Update tracking
-        self._last_alert_times[last_alert_key] = current_time
+        # Update counters
         self._alert_counts[last_alert_key] = self._alert_counts.get(last_alert_key, 0) + 1
         
-        # Send notifications
-        asyncio.create_task(self._send_notifications(alert))
+        # Only update cooldown timestamp and send notifications when not in cooldown
+        if not in_cooldown:
+            self._last_alert_times[last_alert_key] = current_time
+            # Send notifications (handle sync/async contexts)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._send_notifications(alert))
+            except RuntimeError:
+                # No running event loop (e.g., sync test) - run synchronously
+                try:
+                    asyncio.run(self._send_notifications(alert))
+                except RuntimeError:
+                    # If already inside an event loop but get_running_loop failed for other reasons
+                    # fallback: schedule via thread
+                    threading.Thread(target=lambda: asyncio.run(self._send_notifications(alert)), daemon=True).start()
     
     def _build_alert_message(self, rule: AlertRule, value: float) -> str:
         """Build alert message"""

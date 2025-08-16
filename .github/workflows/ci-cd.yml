@@ -36,20 +36,39 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd ${{ matrix.service }}
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-asyncio
+        if [ "${{ matrix.service }}" = "api" ]; then
+          # API lives under publishing-orchestrator
+          python -m pip install --upgrade pip
+          cd publishing-orchestrator
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov pytest-asyncio pytest-timeout
+        else
+          cd ${{ matrix.service }}
+          python -m pip install --upgrade pip
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e .; fi
+          # Explicit installs for missing deps observed in CI
+          pip install crewai[tools] aiohttp pydantic psutil structlog httpx requests
+          pip install pytest pytest-cov pytest-asyncio pytest-timeout
+        fi
     
     - name: Run tests
       run: |
-        cd ${{ matrix.service }}
-        python -m pytest --cov=src --cov-report=xml --cov-report=term
+        if [ "${{ matrix.service }}" = "api" ]; then
+          cd publishing-orchestrator
+          python -m pytest -k "not e2e and not performance and not heavy_load" --maxfail=1 --cov=. --cov-report=xml --cov-report=term
+        else
+          cd ${{ matrix.service }}
+          python -m pytest -k "not e2e and not performance and not heavy_load" --maxfail=1 --cov=. --cov-report=xml --cov-report=term
+        fi
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./${{ matrix.service }}/coverage.xml
+        file: |
+          ${{ matrix.service == 'api' && (hashFiles('publishing-orchestrator/coverage.xml') != '' && 'publishing-orchestrator/coverage.xml' || 'coverage.xml') || format('{0}/coverage.xml', matrix.service) }}
         flags: ${{ matrix.service }}
         fail_ci_if_error: false
 

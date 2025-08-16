@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  test-python-3.11:
+    image: python:3.11
+    working_dir: /ws/ai_writing_flow
+    environment:
+      - CI_LIGHT=${CI_LIGHT:-1}
+      - PYTHONUNBUFFERED=1
+      - PIP_ROOT_USER_ACTION=ignore
+    volumes:
+      - ./:/ws:rw
+    command: >-
+      bash -lc "python -m pip install -U pip && \
+      python -m pip install crewai==0.157.0 crewai-tools==0.60.0 openai anthropic aiohttp httpx requests pydantic python-dotenv pyyaml structlog psutil pytest pytest-asyncio pytest-cov pytest-timeout && \
+      PYTHONPATH=src CI_LIGHT=${CI_LIGHT:-1} pytest ${TESTARGS:- -q tests}"

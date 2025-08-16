@@ -11,7 +11,11 @@ import time
 import structlog
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from crewai.flow.flow import Flow, start, listen
+try:
+    from crewai.flow import Flow as _CrewFlow
+    BaseFlow = _CrewFlow
+except Exception:
+    BaseFlow = object
 
 from ...models import (
     ContentAnalysisResult,
@@ -64,7 +68,7 @@ class TechnicalFlowState(BaseModel):
     total_code_examples: int = 0
 
 
-class TechnicalContentFlow(Flow[TechnicalFlowState]):
+class TechnicalContentFlow(BaseFlow):
     """
     Technical Content Flow with specialized processing:
     
@@ -87,6 +91,11 @@ class TechnicalContentFlow(Flow[TechnicalFlowState]):
                 - technical_level: Target technical depth
         """
         super().__init__()
+        # Ensure state exists without CrewAI runtime
+        try:
+            self.state  # type: ignore[attr-defined]
+        except Exception:
+            self.state = TechnicalFlowState()
         self.config = config or {}
         
         # Default configuration
@@ -109,7 +118,6 @@ class TechnicalContentFlow(Flow[TechnicalFlowState]):
             config=self.config
         )
     
-    @start()
     def deep_technical_research(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Entry point: Conduct deep technical research
@@ -271,7 +279,6 @@ class TechnicalContentFlow(Flow[TechnicalFlowState]):
             )
             raise
     
-    @flow_listen(deep_technical_research)
     def validate_code_examples(self, research_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate and test code examples from research
@@ -312,7 +319,18 @@ class TechnicalContentFlow(Flow[TechnicalFlowState]):
                         "title": "Basic Implementation",
                         "code": """
 # Example implementation
-from crewai.flow.flow import Flow, start, listen
+from crewai.flow import Flow, start, listen
+try:
+    Flow  # noqa: F401
+except Exception:
+    def start(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+    def listen(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
 
 class ExampleFlow(Flow):
     @start()
@@ -393,7 +411,6 @@ async def advanced_processing(self, result):
                 "next_stage": "technical_writing"
             }
     
-    @flow_listen(validate_code_examples)
     def technical_writing(self, validation_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create technical content with validated examples
@@ -553,7 +570,6 @@ and production-ready patterns.
         
         return draft
     
-    @flow_listen(technical_writing)
     def technical_review_optimization(self, writing_output: Dict[str, Any]) -> Dict[str, Any]:
         """
         Review and optimize technical content
