@@ -1,7 +1,7 @@
 import { fetchJSON } from '@/lib/api'
 
 async function fetchPublications() {
-  const data = await fetchJSON<any>('http://localhost:8080/publications', { cache: 'no-store' as any })
+  const data = await fetchJSON<any>('/api/publishing/publications', { cache: 'no-store' as any })
   return data.publications || []
 }
 

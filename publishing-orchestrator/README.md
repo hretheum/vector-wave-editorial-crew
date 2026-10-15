@@ -136,6 +136,26 @@ streszczenie na podstawie pamięci (`publications_store`).
 #### `POST /test/simple`
 Simple test endpoint for basic functionality validation.
 
+#### `POST /test/publish-gamma`
+Trigger LinkedIn flow with presentation generation and Gamma preference.
+
+Request (all fields optional, defaults favor Gamma):
+```json
+{
+  "title": "Architecture Strategy Overview",
+  "description": "System architecture and strategy for multi-service publishing",
+  "keywords": ["architecture", "system", "strategy"],
+  "target_audience": "developers",
+  "force_presentation": true,
+  "force_gamma": true,
+  "direct_content": false
+}
+```
+
+Notes:
+- When `direct_content=false`, orchestrator runs full generation path. With `force_presentation=true` and `force_gamma=true`, it will prefer Gamma (if healthy) and return links under `platform_content.linkedin.manual_upload.assets.{pdf_url,ppt_url}` and `platform_content.linkedin.presentation.provider="gamma"`.
+- Health/selection still respects service availability.
+
 ## Integration Points
 
 ### AI Writing Flow Service (Port 8001)

@@ -82,9 +82,14 @@ async def startup_event():
     
     try:
         # Initialize Gamma.app API client
-        gamma_api_key = os.getenv("GAMMA_API_KEY")
+        # Support multiple env var names for the API key
+        gamma_api_key = (
+            os.getenv("GAMMA_API_KEY")
+            or os.getenv("GAMMA_PPT_API_KEY")
+            or os.getenv("GAMMA_TOKEN")
+        )
         if not gamma_api_key:
-            logger.warning("⚠️ GAMMA_API_KEY not set - service will run in demo mode")
+            logger.warning("⚠️ GAMMA_API_KEY not set (also checked GAMMA_PPT_API_KEY, GAMMA_TOKEN) - service will run in demo mode")
         
         service_state["gamma_client"] = GammaAPIClient(
             api_key=gamma_api_key,
@@ -128,6 +133,13 @@ async def root():
     """Root endpoint with service information"""
     uptime = time.time() - service_state["start_time"]
     
+    # Detect API key presence for UI/reporting
+    gamma_api_key_present = bool(
+        os.getenv("GAMMA_API_KEY")
+        or os.getenv("GAMMA_PPT_API_KEY")
+        or os.getenv("GAMMA_TOKEN")
+    )
+
     return {
         "service": "Gamma PPT Generator Service",
         "description": "Gamma.app API wrapper for AI-powered presentations",
@@ -141,7 +153,7 @@ async def root():
             "circuit_breaker": "Fault tolerance for external API calls"
         },
         "gamma_integration": {
-            "api_status": "connected" if os.getenv("GAMMA_API_KEY") else "demo_mode",
+            "api_status": "connected" if gamma_api_key_present else "demo_mode",
             "monthly_limit": "50 generations (Beta)",
             "supported_formats": ["PDF", "PPTX"],
             "languages": "60+ supported"
@@ -275,11 +287,41 @@ async def generate_presentation(
             service_state["gamma_client"].generate_presentation,
             request.dict()
         )
-        
-        # Update service stats
+
+        # If Gamma API indicates failure or missing essential data, map to failed response
+        if (
+            not getattr(generation_result, "success", False)
+            or (
+                not generation_result.preview_url
+                and not generation_result.download_urls
+                and not generation_result.presentation_id
+            )
+        ):
+            error_parts = []
+            if getattr(generation_result, "error_code", None):
+                error_parts.append(str(generation_result.error_code))
+            if getattr(generation_result, "error_message", None):
+                error_parts.append(str(generation_result.error_message))
+            error_text = ": ".join(error_parts) if error_parts else "Gamma API returned an incomplete or error response"
+
+            logger.warning(f"❗ Gamma generation failed ({generation_id}): {error_text}")
+            return GammaGenerationResponse(
+                generation_id=generation_id,
+                status="failed",
+                gamma_presentation_id=None,
+                preview_url=None,
+                download_urls=None,
+                slides_count=None,
+                generation_time_ms=getattr(generation_result, "processing_time_ms", None),
+                cost=None,
+                error_message=error_text,
+                created_at=datetime.now()
+            )
+
+        # Update service stats only on success
         service_state["generation_count"] += 1
         service_state["total_cost"] += generation_result.cost or 0.0
-        
+
         response = GammaGenerationResponse(
             generation_id=generation_id,
             status="completed",
@@ -291,8 +333,9 @@ async def generate_presentation(
             cost=generation_result.cost,
             created_at=datetime.now()
         )
-        
-        logger.info(f"✅ Presentation generated: {generation_id}, cost: ${generation_result.cost:.2f}")
+
+        safe_cost = generation_result.cost if isinstance(generation_result.cost, (int, float)) else 0.0
+        logger.info(f"✅ Presentation generated: {generation_id}, cost: ${safe_cost:.2f}")
         return response
         
     except HTTPException:

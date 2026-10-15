@@ -10,7 +10,7 @@ type Service = {
 const SERVICES: Service[] = [
   { name: 'Editorial', url: 'http://localhost:8040/health' },
   { name: 'TopicMgr', url: 'http://localhost:8041/health' },
-  { name: 'Publisher', url: 'http://localhost:8080/health' },
+  { name: 'Publisher', url: 'http://localhost:8085/health' },
 ]
 
 function dotClass(ok: boolean | null) {

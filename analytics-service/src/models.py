@@ -157,7 +157,7 @@ class HealthResponse(BaseModel):
     uptime_seconds: float
     chromadb_status: Optional[str] = None
     collections_available: Optional[int] = None
-    circuit_breaker_state: Optional[str] = None
+    circuit_breaker_state: Optional[Dict[str, Any]] = None
     platform_collectors: Optional[Dict[str, str]] = None
 
 

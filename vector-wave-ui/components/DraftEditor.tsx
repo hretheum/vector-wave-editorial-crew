@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Save, Eye, EyeOff, Download, Copy, CheckCircle2, FileText, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,39 @@ export function DraftEditor({
   const [activeView, setActiveView] = useState<'edit' | 'preview' | 'linkedin' | 'diagnostics'>('edit');
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  const [aiTitle, setAiTitle] = useState<string | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+
+  
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        const resp = await fetch('/api/ai/summarize-topic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: topicTitle || 'Draft', description: '', document: draft || '' })
+        });
+        const j = await resp.json().catch(() => ({} as any));
+        const t: string | undefined = (j && (j.shortTitle as string)) || undefined;
+        if (!cancelled) {
+          const fallback = (draft || '').split(/\n|\r/)[0]?.trim() || (topicTitle || 'Draft');
+          setAiTitle((t || fallback).slice(0, 120));
+        }
+      } catch {
+        if (!cancelled) {
+          const fallback = (draft || '').split(/\n|\r/)[0]?.trim() || (topicTitle || 'Draft');
+          setAiTitle(fallback.slice(0, 120));
+        }
+      }
+    }
+    run();
+    return () => { cancelled = true; };
+  }, [draft, topicTitle]);
+
+  
 
   const handleSave = () => {
     // Save to localStorage as backup
@@ -62,6 +95,30 @@ export function DraftEditor({
   const wordCount = draft.split(/\s+/).filter(word => word.length > 0).length;
   const charCount = draft.length;
 
+  // Normalize line breaks for display only (do not mutate original draft)
+  // - Keep double newlines as paragraph breaks
+  // - Preserve list lines (starting with -, *, or numbered)
+  // - Merge single newlines inside paragraphs into spaces
+  const normalizeForDisplay = (text: string): string => {
+    // Protect list lines by tagging them temporarily
+    const protectedText = text
+      .replace(/\r\n/g, '\n')
+      .replace(/^(\s*[-*]\s+)/gm, '§LIST$1')
+      .replace(/^(\s*\d+\.)\s+/gm, '§NUM$1 ');
+
+    // Merge single newlines within paragraphs
+    const merged = protectedText
+      .replace(/\n(?!\n)/g, ' ')
+      // Collapse 3+ newlines to exactly two
+      .replace(/\n{3,}/g, '\n\n');
+
+    // Restore list line markers
+    return merged
+      .replace(/^§LIST/gm, '')
+      .replace(/^§NUM/gm, '');
+  };
+  const displayDraft = normalizeForDisplay(draft);
+
   // Format draft for LinkedIn (preserves LinkedIn formatting)
   const formatForLinkedIn = (text: string): string => {
     return text
@@ -78,12 +135,14 @@ export function DraftEditor({
       .trim();
   };
 
-  const linkedInFormattedText = formatForLinkedIn(draft);
+  const linkedInFormattedText = formatForLinkedIn(displayDraft);
+
+  const heading = (aiTitle || topicTitle || 'Draft').toString().replace(/\s+/g, ' ').trim();
 
   return (
-    <div className="h-full flex flex-col max-w-5xl mx-auto">
+    <div className="h-full flex flex-col w-full" style={{ maxWidth: 'none' }}>
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
+      <div className="border-b border-gray-200 bg-white">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -96,17 +155,6 @@ export function DraftEditor({
                 <ArrowLeft className="w-4 h-4" />
                 Wróć do dashboardu
               </Button>
-              <div className="h-8 w-px bg-gray-300" />
-              <div>
-                <h2 className="text-lg font-semibold">{topicTitle}</h2>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Badge variant="secondary">{platform}</Badge>
-                  <span>•</span>
-                  <span>{wordCount} słów</span>
-                  <span>•</span>
-                  <span>{charCount} znaków</span>
-                </div>
-              </div>
             </div>
             <div className="flex items-center gap-2">
               {/* View Toggle Buttons */}
@@ -202,25 +250,40 @@ export function DraftEditor({
               </Button>
             </div>
           </div>
+          
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden">
+        {/* Title + meta (full-width, outside header flex) */}
+        <div className="px-6 pt-4">
+          <h2 className="text-xl font-semibold text-gray-900">{heading}{topicTitle && topicTitle.length > 140 ? '…' : ''}</h2>
+          <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+            <Badge variant="secondary">{platform}</Badge>
+            <span>•</span>
+            <span>{wordCount} słów</span>
+            <span>•</span>
+            <span>{charCount} znaków</span>
+          </div>
+        </div>
         {activeView === 'preview' && (
-          <Card className="h-full m-6 overflow-auto">
+          <Card className="h-full m-6 overflow-auto" style={{ maxWidth: 'none' }}>
             <CardHeader>
               <CardTitle>Podgląd</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-gray max-w-none">
+              <div className="w-full" style={{ maxWidth: 'none' }}>
                 {/* Enhanced text formatting with line breaks, bold, hashtags */}
                 <div 
-                  className="whitespace-pre-wrap leading-relaxed"
+                  ref={previewRef}
+                  data-test="draft-preview"
+                  className="whitespace-normal break-words leading-relaxed w-full"
+                  style={{ maxWidth: 'none', outline: '0px solid transparent' }}
                   dangerouslySetInnerHTML={{
-                    __html: draft
-                      // Convert \n to <br> for line breaks
-                      .replace(/\n/g, '<br>')
+                    __html: displayDraft
+                      // Convert paragraph breaks only
+                      .replace(/\n\n/g, '<br/><br/>')
                       // Convert **text** to <strong>text</strong>
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       // Convert *text* to <em>text</em> 

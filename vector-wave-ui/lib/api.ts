@@ -13,18 +13,26 @@ export type TopicSuggestion = {
 };
 
 export async function fetchTopicSuggestions(limit = 12): Promise<TopicSuggestion[]> {
-  // Best-effort suggestions via Topic Manager vector search
+  // Always use UI proxy to work both in docker and local npm dev
   const q = encodeURIComponent("AI");
+  const url = `/api/topics/suggestions?q=${q}&limit=${limit}`;
   try {
-    const data = await fetchJSON<any>(`http://localhost:8041/topics/search?q=${q}&limit=${limit}`);
+    const res = await fetch(url, { cache: 'no-store' } as any);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     const items = (data.items || []) as any[];
-    return items.map((it) => ({
-      topic_id: it.topic_id || it.id,
-      title: it.title || it.document || "Suggested Topic",
-      description: (it.metadata && it.metadata.summary) || "",
-      score: typeof it.score === "number" ? it.score : undefined,
-      platform_fit: ["linkedin", "twitter", "ghost"],
-    }));
+    return items.map((it) => {
+      const meta = (it.metadata || {}) as any;
+      const title = meta.title || it.title || it.document || "Suggested Topic";
+      const description = meta.summary || meta.description || "";
+      return {
+        topic_id: it.topic_id || it.id,
+        title,
+        description,
+        score: typeof it.score === "number" ? it.score : undefined,
+        platform_fit: ["linkedin", "twitter", "ghost"],
+      };
+    });
   } catch {
     // Fallback mock
     return Array.from({ length: limit }).map((_, i) => ({

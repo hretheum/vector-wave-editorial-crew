@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { flushSync } from "react-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Folder, Sparkles, Clock, FileText, BarChart3, Zap, Brain, Target, TrendingUp, ArrowRight, Loader2, CheckCircle2, AlertCircle, MessageSquare, Download, Copy, PenTool } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ import { DraftEditor } from "@/components/DraftEditor";
 import { FlowDiagnostics } from "@/components/FlowDiagnostics";
 
 export default function Home() {
+  const router = useRouter();
   const [folders, setFolders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -28,40 +31,95 @@ export default function Home() {
   const [showFlowDiagnostics, setShowFlowDiagnostics] = useState(false);
   const [currentFlowId, setCurrentFlowId] = useState<string | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
-  // Auto-load content folders on mount
+  // UI thresholds from ENV (public)
+  const PROFILE_FIT_MIN = Number(process.env.NEXT_PUBLIC_PROFILE_FIT_MIN ?? '7');
+  const NOVELTY_MIN = Number(process.env.NEXT_PUBLIC_NOVELTY_MIN ?? '6');
+
+  // Auto-load topic suggestions on mount (replaces legacy folders)
   useEffect(() => {
-    const loadFolders = async () => {
+    const loadTopics = async () => {
       try {
-        console.log('🔄 Loading folders...');
-        const response = await fetch('/api/crewai/list-content-folders');
-        console.log('📡 Response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`❌ CRITICAL ERROR: Failed to fetch folders - HTTP ${response.status} - ${errorText}`);
-        }
-        
+        console.log('🔄 Loading suggested topics...');
+        const response = await fetch('/api/topics/suggestions?limit=9', { cache: 'no-store' });
         const data = await response.json();
-        console.log('📂 Data received:', data);
-        
-        // NO MOCK DATA - ONLY REAL DATA OR ERROR
-        if (data.folders) {
-          setFolders(data.folders);
-          console.log('✅ Folders set:', data.folders);
-        } else {
-          throw new Error('❌ CRITICAL: No folders data in response');
-        }
+        const items = Array.isArray((data as any).items) ? (data as any).items : [];
+        // Generate AI short title + teaser per item (best-effort)
+        const summaries = await Promise.all(items.map(async (it: any) => {
+          const payload = {
+            title: it.metadata?.title || it.title || it.document || '',
+            description: it.metadata?.summary || it.metadata?.description || '',
+            document: it.document || ''
+          };
+          try {
+            const r = await fetch('/api/ai/summarize-topic', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            if (!r.ok) throw new Error('ai_failed');
+            const j = await r.json();
+            return { shortTitle: j.shortTitle, teaser: j.teaser };
+          } catch {
+            // Fallback to mechanical clamp on client
+            const clamp = (t: string, n: number) => {
+              if (!t) return '';
+              const s = t.trim();
+              if (s.length <= n) return s;
+              const slice = s.slice(0, n);
+              const last = slice.lastIndexOf(' ');
+              return (last > 40 ? slice.slice(0, last) : slice).trim() + '…';
+            };
+            const firstParagraph = (txt: string) => (txt || '').split(/\n\n|\r\n\r\n/)[0] || '';
+            return {
+              shortTitle: clamp(payload.title || 'Topic', 80),
+              teaser: clamp(firstParagraph(payload.description || payload.document || ''), 180)
+            };
+          }
+        }));
+        const mapped = items.map((it: any, idx: number) => ({
+          topicId: it.topic_id || it.id || null,
+          name: (summaries[idx]?.shortTitle) || it.title || it.document || 'Topic',
+          titleRaw: it.metadata?.title || it.title || it.document || 'Topic',
+          teaser: (summaries[idx]?.teaser) || '',
+          files_count: it.metadata?.files_count || 1,
+          modified: Date.now()/1000,
+        }));
+        setFolders(mapped);
       } catch (error) {
-        console.error('❌ Failed to load folders:', error);
+        console.error('❌ Failed to load topics:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    // Simulate assistant-ui auto-execution
-    setTimeout(loadFolders, 500);
+    setTimeout(loadTopics, 300);
   }, []);
+
+  const seedTopicsNow = async () => {
+    try {
+      setSeeding(true);
+      await fetch('/api/admin/seed-topics', { method: 'POST' });
+      // small delay, then refetch suggestions
+      await new Promise(r => setTimeout(r, 800));
+      const r = await fetch('/api/topics/suggestions?limit=9', { cache: 'no-store' });
+      const data = await r.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+      const mapped = items.map((it: any) => ({
+        topicId: it.topic_id || it.id || null,
+        name: it.title || it.document || 'Topic',
+        titleRaw: it.metadata?.title || it.title || it.document || 'Topic',
+        teaser: it.metadata?.summary || it.metadata?.description || '',
+        files_count: it.metadata?.files_count || 1,
+        modified: Date.now()/1000,
+      }));
+      setFolders(mapped);
+    } catch (e) {
+      console.error('Seed topics failed', e);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const saveMetadata = async (result: any) => {
     try {
@@ -361,6 +419,35 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
     }
   };
 
+  const analyzeFull = async () => {
+    if (!analysisResult?.folder) return;
+    try {
+      setIsAnalyzing(true);
+      const r = await fetch('/api/topics/analyze-full', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: analysisResult.folder, summary: analysisResult.folder })
+      });
+      const j = await r.json().catch(() => ({} as any));
+      const triage = j?.triage || {};
+      const valueScore = Math.round(((triage.profile_fit_score ?? analysisResult.valueScore/10 || 0) * 10));
+      const noveltyScore = Math.round(((triage.novelty_score ?? 0) * 10));
+      const decision = String(triage.decision || '').toUpperCase();
+      const nearest = Array.isArray(triage.nearest || triage.nearest_topics) ? (triage.nearest || triage.nearest_topics) : [];
+      setAnalysisResult((prev: any) => ({
+        ...(prev || {}),
+        valueScore,
+        noveltyScore,
+        decision,
+        nearest,
+      }));
+    } catch (e) {
+      console.error('analyze-full failed', e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Load chat docked state
   useEffect(() => {
     const savedDocked = localStorage.getItem('chatPanelDocked');
@@ -490,12 +577,26 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                   Dostępne tematy ({folders.length})
                 </h2>
               </div>
-              <Badge variant="secondary">
-                Ostatnia aktualizacja: {new Date().toLocaleTimeString('pl')}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  Ostatnia aktualizacja: {new Date().toLocaleTimeString('pl')}
+                </Badge>
+                <button
+                  type="button"
+                  onClick={seedTopicsNow}
+                  disabled={seeding}
+                  className="px-3 py-1 border rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {seeding ? (
+                    <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Odświeżam…</span>
+                  ) : (
+                    <span>Odśwież tematy</span>
+                  )}
+                </button>
+              </div>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {folders.map((folder, idx) => (
                 <Card 
                   key={`folder-${folder.name}-${idx}`} 
@@ -511,6 +612,9 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                         <CardTitle className="text-lg group-hover:text-indigo-600 transition-colors">
                           {folder.name}
                         </CardTitle>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-3">
+                          {folder.teaser}
+                        </p>
                         <div className="flex items-center gap-4 mt-2">
                           <Badge variant="outline" className="gap-1">
                             <FileText className="w-3 h-3" />
@@ -556,6 +660,36 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                         </>
                       )}
                     </button>
+                    {folder.topicId ? (
+                      <Link
+                        href={`/topics/${encodeURIComponent(folder.topicId)}?t=${encodeURIComponent(folder.titleRaw || folder.name)}`}
+                        className="w-full mt-2 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all cursor-pointer border h-10 px-4 py-2 hover:bg-gray-50 text-center"
+                      >
+                        Szczegóły tematu
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const r = await fetch('/api/topics/ensure', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ title: folder.titleRaw || folder.name, summary: folder.teaser || folder.name })
+                            });
+                            const data = await r.json();
+                            const tid = data?.topic_id || data?.existing_topic_id;
+                            if (tid) router.push(`/topics/${encodeURIComponent(tid)}?t=${encodeURIComponent(folder.titleRaw || folder.name)}`);
+                          } catch (err) {
+                            console.error('ensure topic failed', err);
+                          }
+                        }}
+                        className="w-full mt-2 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all cursor-pointer border h-10 px-4 py-2 hover:bg-gray-50"
+                      >
+                        Szczegóły tematu
+                      </button>
+                    )}
                   </CardFooter>
                 </Card>
               ))}
@@ -564,8 +698,11 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
         )}
 
         {/* Analysis Results */}
+        {isAnalyzing && (
+          <div data-test="analysis-started" className="hidden" />
+        )}
         {analysisResult && (
-          <Card className="shadow-2xl border-0 overflow-hidden">
+          <Card className="shadow-2xl border-0 overflow-hidden" data-test="analysis-results-card">
             <div className="h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -614,7 +751,7 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
               ) : (
                 <>
               {/* Metrics Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-test="analysis-metrics">
                 <Card className="border-gray-100 shadow-sm">
                   <CardHeader className="pb-3">
                     <CardDescription>Liczba plików</CardDescription>
@@ -666,9 +803,55 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                           />
                         ))}
                       </div>
+                      <span className="ml-2 text-xs text-gray-500">min {PROFILE_FIT_MIN}</span>
                     </div>
                   </CardHeader>
                 </Card>
+
+                {typeof analysisResult.noveltyScore === 'number' && (
+                  <Card className="border-gray-100 shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardDescription>Novelty</CardDescription>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-3xl font-bold text-orange-600">
+                          {analysisResult.noveltyScore}
+                        </CardTitle>
+                        <div className="flex gap-0.5">
+                          {[...Array(10)].map((_, i) => (
+                            <div
+                              key={`novelty-bar-${i}`}
+                              className={cn(
+                                "w-2 h-8 rounded-sm transition-all",
+                                i < analysisResult.noveltyScore
+                                  ? "bg-gradient-to-t from-orange-600 to-orange-400"
+                                  : "bg-gray-200"
+                              )}
+                            />
+                          ))}
+                        </div>
+                        <span className="ml-2 text-xs text-gray-500">min {NOVELTY_MIN}</span>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                )}
+
+                {(() => {
+                  const meetsFit = (analysisResult.valueScore ?? 0) >= PROFILE_FIT_MIN;
+                  const meetsNov = typeof analysisResult.noveltyScore === 'number' ? (analysisResult.noveltyScore >= NOVELTY_MIN) : true;
+                  const derived = meetsFit && meetsNov ? 'PROMOTE' : 'REVIEW';
+                  const decisionText = String(analysisResult.decision || derived).toUpperCase();
+                  return (
+                  <Card className="border-gray-100 shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardDescription>Decyzja (wg progów ENV)</CardDescription>
+                      <CardTitle className={cn("text-lg", decisionText === 'PROMOTE' ? 'text-green-600' : 'text-gray-700') }>
+                        {decisionText}
+                      </CardTitle>
+                      <p className="text-xs text-gray-500 mt-1">progi: fit≥{PROFILE_FIT_MIN}, novelty≥{NOVELTY_MIN}</p>
+                    </CardHeader>
+                  </Card>
+                  );
+                })()}
               </div>
 
               {/* Flow Results */}
@@ -856,6 +1039,18 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                 </div>
               )}
 
+              {/* Nearest Topics */}
+              {Array.isArray(analysisResult.nearest) && analysisResult.nearest.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Najbliższe tematy (TM)</h3>
+                  <ul className="list-disc pl-6 text-sm text-gray-700">
+                    {analysisResult.nearest.slice(0, 5).map((n: any, idx: number) => (
+                      <li key={`nearest-${idx}`}>{typeof n === 'string' ? n : (n?.title || n?.id || 'topic')}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-4">
                 <Button 
@@ -865,6 +1060,16 @@ ${analysis.topTopics && analysis.topTopics.length > 0 ?
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Zapisz metadane
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="default"
+                  onClick={analyzeFull}
+                  data-test="analyze-full-reindex"
+                  disabled={isAnalyzing}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analiza pełna + reindex
                 </Button>
                 <Button 
                   size="lg" 

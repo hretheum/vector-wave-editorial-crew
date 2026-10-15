@@ -1,10 +1,9 @@
 import { fetchJSON } from '@/lib/api'
-import toast from 'react-hot-toast'
 
 async function trackAnalytics(payload: any) {
   'use server'
   try {
-    await fetchJSON<any>('http://localhost:8080/analytics/track', {
+    await fetchJSON<any>('/api/publishing/analytics/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -21,7 +20,7 @@ async function publishSample() {
       twitter: { enabled: true, account_id: 'b' },
     },
   }
-  const res = await fetchJSON<any>('http://localhost:8080/publish', {
+  const res = await fetchJSON<any>('/api/publishing/publish', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -35,7 +34,7 @@ export default async function PublishingPage() {
   async function fetchMetrics() {
     'use server'
     try {
-      const m = await fetchJSON<any>('http://localhost:8080/metrics', { cache: 'no-store' as any })
+      const m = await fetchJSON<any>('/api/publishing/metrics', { cache: 'no-store' as any })
       return m
     } catch {
       return null
@@ -82,7 +81,7 @@ export default async function PublishingPage() {
           const platform = String(formData.get('platform')||'linkedin')
           const hour = String(formData.get('hour')||'11:00')
           const score = Number(formData.get('score')||0.8)
-          await fetchJSON<any>(`http://localhost:8080/preferences/${user}`, {
+          await fetchJSON<any>(`/api/publishing/preferences/${user}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ platform, hour, score }),
@@ -106,34 +105,18 @@ export default async function PublishingPage() {
           <button className="px-3 py-1.5 bg-gray-800 text-white rounded">Save</button>
         </form>
       </div>
-      <p className="text-sm text-gray-500 mt-3">Calls orchestrator at localhost:8080</p>
-  <div className="mt-6 border-t pt-4">
-    <h3 className="font-semibold mb-2">Presentation services</h3>
-    <div className="flex gap-2">
-      <button
-        className="px-3 py-1 border rounded"
-        onClick={async () => {
-          const opts = await fetchJSON<any>('http://localhost:8080/presentation-options', { cache: 'no-store' as any })
-          alert('Presentation services: ' + JSON.stringify(opts))
-        }}
-      >
-        Check options
-      </button>
-      <button
-        className="px-3 py-1 border rounded"
-        onClick={async () => {
-          const rec = await fetchJSON<any>('http://localhost:8080/presentation-services/recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content_sample: 'System architecture strategy for LinkedIn', prefer_cost_savings: false })
-          } as any)
-          alert('Recommendation: ' + JSON.stringify(rec))
-        }}
-      >
-        Recommend service
-      </button>
-    </div>
-  </div>
+      <p className="text-sm text-gray-500 mt-3">Calls orchestrator at 8085</p>
+      <div className="mt-6 border-t pt-4">
+        <h3 className="font-semibold mb-2">Presentation services</h3>
+        <div className="flex gap-3 text-sm">
+          <a className="px-3 py-1 border rounded hover:bg-gray-50" href="/api/publishing/presentation-options" target="_blank" rel="noreferrer">Open options (JSON)</a>
+          <form method="post" action="/api/publishing/presentation-services/recommend" target="_blank">
+            <input type="hidden" name="content_sample" value="System architecture strategy for LinkedIn" />
+            <input type="hidden" name="prefer_cost_savings" value="false" />
+            <button className="px-3 py-1 border rounded hover:bg-gray-50" type="submit">Recommend (POST)</button>
+          </form>
+        </div>
+      </div>
     </main>
   )
 }

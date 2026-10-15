@@ -117,6 +117,9 @@ GAMMA_PPT_URL = os.getenv("GAMMA_PPT_URL", "http://localhost:8003")
 PRESENTON_URL = os.getenv("PRESENTON_URL", "http://localhost:8089")
 LINKEDIN_PPT_GENERATOR_URL = os.getenv("LINKEDIN_PPT_GENERATOR_URL", "http://localhost:8002")
 
+# Toggle for Gamma usage
+GAMMA_ENABLED = os.getenv("GAMMA_ENABLED", "false").lower() == "true"
+
 
 def _get_redis_queue_stats() -> Optional[Dict[str, Any]]:
     """Return Redis queue stats if REDIS_URL and redis client are available.
@@ -297,48 +300,109 @@ async def generate_linkedin_presentation(content: Dict[str, Any]) -> Optional[Di
             return None
 
         # Decide which service to use
-        service, reason = await choose_presentation_service(content.get("content", ""))
+        force_gamma_flag = bool(content.get("force_gamma", False))
+        service, reason = await choose_presentation_service(content.get("content", ""), force_gamma=force_gamma_flag)
         logger.info(f"Presentation service selected: {service} ({reason})")
 
         async with httpx.AsyncClient() as client:
             if service == "gamma":
-                payload = {
-                    "topic": {
-                        "title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation",
-                        "description": (content.get("topic") or {}).get("description") or "",
-                        "keywords": (content.get("topic") or {}).get("keywords") or [],
-                        "target_audience": (content.get("topic") or {}).get("target_audience") or "linkedin"
-                    },
-                    "slides_count": 5,
-                    "language": "en",
-                    "output_formats": ["pdf", "pptx"],
-                    "custom_instructions": "Optimize for LinkedIn document post with concise bullets"
-                }
-                r = await client.post(f"{GAMMA_PPT_URL}/generate/presentation", json=payload, timeout=90.0)
-                r.raise_for_status()
-                data = r.json()
-                return {
-                    "ppt_url": (data.get("download_urls") or {}).get("pptx"),
-                    "pdf_url": (data.get("download_urls") or {}).get("pdf"),
-                    "provider": "gamma",
-                    "preview_url": data.get("preview_url"),
-                }
+                try:
+                    payload = {
+                        "topic": {
+                            "title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation",
+                            "description": (content.get("topic") or {}).get("description") or "",
+                            "keywords": (content.get("topic") or {}).get("keywords") or [],
+                            "target_audience": (content.get("topic") or {}).get("target_audience") or "linkedin"
+                        },
+                        "slides_count": 5,
+                        "language": "en",
+                        "output_formats": ["pdf", "pptx"],
+                        "custom_instructions": "Optimize for LinkedIn document post with concise bullets"
+                    }
+                    r = await client.post(f"{GAMMA_PPT_URL}/generate/presentation", json=payload, timeout=90.0)
+                    r.raise_for_status()
+                    data = r.json()
+                    return {
+                        "ppt_url": (data.get("download_urls") or {}).get("pptx"),
+                        "pdf_url": (data.get("download_urls") or {}).get("pdf"),
+                        "provider": "gamma",
+                        "preview_url": data.get("preview_url"),
+                    }
+                except Exception as e:
+                    logger.warning(f"Gamma generation failed, attempting fallback to Presenton: {e}")
+                    # Fallback to Presenton, then LinkedIn-PPT
+                    if await check_service_health(PRESENTON_URL):
+                        try:
+                            prompt = build_presenton_prompt(content)
+                            r = await client.post(
+                                f"{PRESENTON_URL}/generate",
+                                json={
+                                    "prompt": prompt,
+                                    "slides_count": 5,
+                                    "template": "default",
+                                    "topic_title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation"
+                                },
+                                timeout=90.0
+                            )
+                            r.raise_for_status()
+                            data = r.json()
+                            return {"ppt_url": data.get("pptx_url"), "pdf_url": data.get("pdf_url"), "provider": "presenton"}
+                        except Exception as e2:
+                            logger.warning(f"Presenton fallback failed, trying LinkedIn-PPT: {e2}")
+                    # Final fallback: LinkedIn-PPT wrapper
+                    try:
+                        r = await client.post(
+                            f"{LINKEDIN_PPT_GENERATOR_URL}/generate-linkedin-ppt",
+                            json={
+                                "topic_title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation",
+                                "topic_description": (content.get("topic") or {}).get("description") or "",
+                                "slides_count": 5,
+                                "template": "default"
+                            },
+                            timeout=90.0
+                        )
+                        r.raise_for_status()
+                        data = r.json()
+                        return {"ppt_url": data.get("pptx_url"), "pdf_url": data.get("pdf_url"), "provider": "linkedin-ppt"}
+                    except Exception as e3:
+                        logger.error(f"All fallbacks failed for presentation generation: {e3}")
+                        return None
 
             if service == "presenton":
-                prompt = build_presenton_prompt(content)
-                r = await client.post(
-                    f"{PRESENTON_URL}/generate",
-                    json={
-                        "prompt": prompt,
-                        "slides_count": 5,
-                        "template": "default",
-                        "topic_title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation"
-                    },
-                    timeout=90.0
-                )
-                r.raise_for_status()
-                data = r.json()
-                return {"ppt_url": data.get("pptx_url"), "pdf_url": data.get("pdf_url"), "provider": "presenton"}
+                try:
+                    prompt = build_presenton_prompt(content)
+                    r = await client.post(
+                        f"{PRESENTON_URL}/generate",
+                        json={
+                            "prompt": prompt,
+                            "slides_count": 5,
+                            "template": "default",
+                            "topic_title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation"
+                        },
+                        timeout=90.0
+                    )
+                    r.raise_for_status()
+                    data = r.json()
+                    return {"ppt_url": data.get("pptx_url"), "pdf_url": data.get("pdf_url"), "provider": "presenton"}
+                except Exception as e:
+                    logger.warning(f"Presenton generation failed, attempting fallback to LinkedIn-PPT: {e}")
+                    try:
+                        r = await client.post(
+                            f"{LINKEDIN_PPT_GENERATOR_URL}/generate-linkedin-ppt",
+                            json={
+                                "topic_title": (content.get("topic") or {}).get("title") or "LinkedIn Presentation",
+                                "topic_description": (content.get("topic") or {}).get("description") or "",
+                                "slides_count": 5,
+                                "template": "default"
+                            },
+                            timeout=90.0
+                        )
+                        r.raise_for_status()
+                        data = r.json()
+                        return {"ppt_url": data.get("pptx_url"), "pdf_url": data.get("pdf_url"), "provider": "linkedin-ppt"}
+                    except Exception as e2:
+                        logger.error(f"LinkedIn-PPT fallback also failed: {e2}")
+                        return None
 
             # Fallback: legacy LinkedIn PPT wrapper (proxied to Presenton)
             r = await client.post(
@@ -369,23 +433,48 @@ def build_presenton_prompt(content: Dict[str, Any]) -> str:
 
 def should_generate_presentation(content: Dict[str, Any]) -> bool:
     """Determine if content should have a LinkedIn presentation"""
+    if content.get("force_presentation") is True:
+        return True
     content_text = content.get("content", "")
     return (
         len(content_text.split()) > 400 and  # Long enough content
-        any(keyword in content_text.lower() for keyword in 
-            ["architecture", "system", "framework", "process", "strategy"])
+        any(keyword in content_text.lower() for keyword in ["architecture", "system", "framework", "process", "strategy"])
     )
 
 async def check_service_health(url: str, path: str = "/health") -> bool:
-    try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
-            r = await client.get(f"{url}{path}")
-            return r.status_code == 200
-    except Exception:
-        return False
+    """Lightweight health probe with small retry/backoff.
 
-async def choose_presentation_service(content_text: str) -> Tuple[str, str]:
-    """Choose between gamma, presenton, and linkedin-ppt based on health and heuristics."""
+    Uses slightly longer timeout to accommodate cold starts in containers.
+    """
+    attempts = 3
+    backoff = 0.6
+    for attempt in range(attempts):
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                r = await client.get(f"{url}{path}")
+                if r.status_code == 200:
+                    # Optional: verify status field if JSON
+                    try:
+                        data = r.json()
+                        if isinstance(data, dict) and data.get("status") not in (None, "unhealthy"):
+                            return True
+                    except Exception:
+                        return True
+        except Exception:
+            pass
+        if attempt < attempts - 1:
+            try:
+                await asyncio.sleep(backoff)
+            except Exception:
+                pass
+            backoff *= 1.5
+    return False
+
+async def choose_presentation_service(content_text: str, force_gamma: bool = False) -> Tuple[str, str]:
+    """Choose between gamma, presenton, and linkedin-ppt based on health and heuristics.
+
+    When force_gamma is True and Gamma is healthy, prefer Gamma regardless of heuristics.
+    """
     # Health checks in priority order
     gamma_ok, presenton_ok, li_ppt_ok = await asyncio.gather(
         check_service_health(GAMMA_PPT_URL),
@@ -395,6 +484,9 @@ async def choose_presentation_service(content_text: str) -> Tuple[str, str]:
 
     # Heuristic: long technical content → gamma preferred
     is_technical = any(k in (content_text or "").lower() for k in ["architecture", "system", "design", "strategy", "framework"])
+
+    if force_gamma and gamma_ok:
+        return "gamma", "forced_gamma_preference"
 
     if gamma_ok and is_technical:
         return "gamma", "gamma available and content appears technical"
@@ -538,7 +630,8 @@ async def orchestrate_publication(request: PublicationRequest,
                 request.topic, platform.value, config
             )
             
-            if "error" in content:
+            # If AI Writing Flow failed but provided fallback content, continue
+            if "error" in content and not content.get("content"):
                 errors.append(f"{platform}: {content['error']}")
                 continue
                 
@@ -548,10 +641,28 @@ async def orchestrate_publication(request: PublicationRequest,
             # Special LinkedIn handling (presentation generation via Gamma/Presenton)
             # Try to generate presentation for LinkedIn; generator may decide
             if platform == PlatformType.LINKEDIN:
-                presentation = await generate_linkedin_presentation({
+                # Pass optional global flags to influence selection/forcing
+                force_presentation_flag = False
+                force_gamma_flag = False
+                try:
+                    if request.global_options:
+                        force_presentation_flag = bool(request.global_options.get("force_presentation", False))
+                        force_gamma_flag = bool(request.global_options.get("force_gamma", False))
+                except Exception:
+                    force_presentation_flag = False
+                    force_gamma_flag = False
+
+                content_with_flags = {
                     **content,
-                    "topic": request.topic.dict() if hasattr(request, "topic") else {}
-                })
+                    "topic": request.topic.dict() if hasattr(request, "topic") else {},
+                }
+                if force_presentation_flag:
+                    content_with_flags["force_presentation"] = True
+                if force_gamma_flag:
+                    content_with_flags["force_gamma"] = True
+
+                # Generate presentation using selected policy/flags
+                presentation = await generate_linkedin_presentation(content_with_flags)
                 if presentation:
                     content_variations[platform.value]["presentation"] = presentation
                     # Attach asset references for manual upload
@@ -670,6 +781,47 @@ async def recommend_presentation_service(payload: RecommendationRequest = Body(.
         "none": None,
     }.get(service)
     return {"recommended": service, "reason": reason, "url": url}
+
+
+class GammaTestPayload(BaseModel):
+    title: str = Field("Architecture Strategy Overview")
+    description: str = Field("System architecture and strategy for multi-service publishing")
+    keywords: List[str] = Field(default_factory=lambda: ["architecture", "system", "strategy"])
+    target_audience: str = Field("developers")
+    force_presentation: bool = Field(True)
+    force_gamma: bool = Field(True)
+    direct_content: bool = Field(False)
+
+
+@app.post("/test/publish-gamma")
+async def test_publish_gamma(payload: GammaTestPayload = Body(default=None)):
+    """Test endpoint to trigger LinkedIn flow with Gamma presentation generation.
+
+    - Uses technical keywords to satisfy heuristics
+    - Allows forcing presentation and Gamma via flags
+    - Returns publication response (provider and URLs included if generation succeeds)
+    """
+    p = payload or GammaTestPayload()
+    req = PublicationRequest(
+        topic=TopicRequest(
+            title=p.title,
+            description=p.description,
+            keywords=p.keywords,
+            target_audience=p.target_audience,
+        ),
+        platforms={
+            PlatformType.LINKEDIN: PlatformConfig(
+                enabled=True,
+                account_id="test",
+                direct_content=p.direct_content,
+            )
+        },
+        global_options={
+            "force_presentation": p.force_presentation,
+            "force_gamma": p.force_gamma,
+        },
+    )
+    return await orchestrate_publication(req, BackgroundTasks())
 
 
 class AnalyticsEvent(BaseModel):
